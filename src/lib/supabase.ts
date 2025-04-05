@@ -19,27 +19,58 @@ export async function getCartDiagramUrl(filename: string): Promise<string | null
   }
 }
 
+function sanitizeFileName(filename: string): string {
+  // Reemplazar caracteres no permitidos con guiones
+  return filename
+    .replace(/[^a-zA-Z0-9-_.]/g, '-') // Solo permitir letras, números, guiones, puntos
+    .replace(/--+/g, '-')              // Evitar guiones múltiples
+    .toLowerCase();
+}
+
 export async function uploadPDF(blob: Blob, filename: string): Promise<string | null> {
   try {
-    const { error } = await supabase
+    // Sanitizar nombre de archivo
+    const safeFileName = sanitizeFileName(filename);
+    
+    // Verificar que el bucket existe
+    const { data: buckets } = await supabase
+      .storage
+      .listBuckets();
+
+    const pdfBucket = buckets?.find(b => b.name === 'pdfs');
+    if (!pdfBucket) {
+      console.error('PDF bucket not found');
+      throw new Error('Storage bucket not configured');
+    }
+
+    // Subir archivo
+    const { error: uploadError } = await supabase
       .storage
       .from('pdfs')
-      .upload(filename, blob, {
+      .upload(safeFileName, blob, {
         contentType: 'application/pdf',
         cacheControl: '3600',
         upsert: true
       });
 
-    if (error) throw error;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw uploadError;
+    }
 
+    // Obtener URL pública
     const { data: urlData } = supabase
       .storage
       .from('pdfs')
-      .getPublicUrl(filename);
+      .getPublicUrl(safeFileName);
+
+    if (!urlData?.publicUrl) {
+      throw new Error('Failed to get public URL');
+    }
 
     return urlData.publicUrl;
   } catch (error) {
     console.error('Error uploading PDF:', error);
-    return null;
+    throw error; // Propagar el error para mejor manejo
   }
 }

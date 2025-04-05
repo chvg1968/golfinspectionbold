@@ -186,9 +186,16 @@ function InspectionForm() {
         if (!pdfData) throw new Error('Error generating PDF');
 
         // Subir PDF a Supabase
-        const pdfFileName = `inspection-form-${formData.property.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`;
-        const pdfUrl = await uploadPDF(pdfData.download.blob, pdfFileName);
-        if (!pdfUrl) throw new Error('Error uploading PDF');
+        const timestamp = new Date().toISOString().split('T')[0];
+        const pdfFileName = `inspection-${timestamp}-${formData.property.replace(/[^a-zA-Z0-9]/g, '')}.pdf`;
+        
+        let pdfUrl;
+        try {
+          pdfUrl = await uploadPDF(pdfData.download.blob, pdfFileName);
+        } catch (uploadError) {
+          console.error('Failed to upload PDF:', uploadError);
+          throw new Error('Could not upload inspection form. Please try again.');
+        }
 
         // Enviar email con el enlace al PDF
         await sendFormEmail('completed-form', {
