@@ -78,9 +78,6 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         throw new Error(`Error sending email to guest: ${response.text}`);
       }
     } else if (type === 'completed-form') {
-      // Comprimir el PDF base64 para el email
-      const pdfData = data.pdfBase64 || '';
-      
       // Enviar al huésped
       const guestParams: EmailParams = {
         ...commonEmailParams,
@@ -91,7 +88,7 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         cart_type: data.inspectionData?.cartType || '',
         cart_number: data.inspectionData?.cartNumber || '',
         observations: data.inspectionData?.observations || 'No observations',
-        pdf_attachment: pdfData,
+        pdf_attachment: data.pdf_attachment, // Usar el enlace del PDF de Supabase
         reply_to: 'support@email.golfcartinspection.app'
       };
 
@@ -129,7 +126,7 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         cart_type: data.inspectionData?.cartType || '',
         cart_number: data.inspectionData?.cartNumber || '',
         observations: data.inspectionData?.observations || 'No observations',
-        pdf_attachment: pdfData,
+        pdf_attachment: data.pdf_attachment, // Usar el enlace del PDF de Supabase
         reply_to: data.guestEmail
       };
 
