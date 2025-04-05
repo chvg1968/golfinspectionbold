@@ -43,16 +43,16 @@ function InspectionForm() {
     guestEmail: '',
     guestPhone: '',
     inspectionDate: format(new Date(), 'yyyy-MM-dd'),
-    property: '',
-    cartType: '',
-    cartNumber: '',
+    property: PROPERTIES[0].name,
+    cartType: PROPERTIES[0].diagramType.includes('6seater') ? '6-Seater' : '4-Seater',
+    cartNumber: PROPERTIES[0].cartNumber,
     observations: '',
   });
   
   const [isGuestView, setIsGuestView] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property>(PROPERTIES[0]);
   const [history, setHistory] = useState<Point[][]>([[]]);
   const [currentStep, setCurrentStep] = useState(0);
   
@@ -363,33 +363,29 @@ function InspectionForm() {
                 isGuestView={isGuestView}
               />
 
-              {selectedProperty && (
-                <div className="border-t pt-8">
-                  <h2 className="text-xl font-semibold mb-4">Cart Diagram</h2>
-                  <DiagramCanvas
-                    selectedProperty={selectedProperty}
-                    history={history}
-                    currentStep={currentStep}
-                    onPointsChange={handlePointsChange}
-                    onUndo={handleUndo}
-                    onClear={clearCanvas}
-                    isGuestView={isGuestView}
-                  />
-                </div>
-              )}
+              <div className="border-t pt-8">
+                <h2 className="text-xl font-semibold mb-4">Cart Diagram</h2>
+                <DiagramCanvas
+                  selectedProperty={selectedProperty || PROPERTIES[0]}
+                  history={history}
+                  currentStep={currentStep}
+                  onPointsChange={handlePointsChange}
+                  onUndo={handleUndo}
+                  onClear={clearCanvas}
+                  isGuestView={isGuestView}
+                />
+              </div>
 
-              {isGuestView && (
-                <div className="border-t pt-8">
-                  <h2 className="text-xl font-semibold mb-4">Guest Signature</h2>
-                  <SignatureSection
-                    signaturePadRef={signaturePadRef}
-                    onClearSignature={clearSignature}
-                    isGuestView={isGuestView}
-                    observations={formData.observations}
-                    onObservationsChange={handleInputChange}
-                  />
-                </div>
-              )}
+              <div className="border-t pt-8">
+                <h2 className="text-xl font-semibold mb-4">Terms and Signature</h2>
+                <SignatureSection
+                  signaturePadRef={signaturePadRef}
+                  onClearSignature={clearSignature}
+                  isGuestView={true}
+                  observations={formData.observations}
+                  onObservationsChange={handleInputChange}
+                />
+              </div>
             </div>
           </div>
 
