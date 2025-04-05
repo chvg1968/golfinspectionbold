@@ -7,24 +7,33 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
     const normalizedName = diagramName.replace(/\.jpg$/, '');
 
     // Primero, buscar si ya existen marcas para este diagrama
-    const { data: existingMarks } = await supabase
+    const { data: existingMarks, error: selectError } = await supabase
       .from('diagram_marks')
-      .select('*')
+      .select('id')
       .eq('diagram_name', normalizedName)
-      .single();
+      .maybeSingle();
+
+    if (selectError) {
+      console.error('Error checking existing marks:', selectError);
+      return;
+    }
 
     if (existingMarks) {
       // Si existen, actualizar
-      await supabase
+      const { error: updateError } = await supabase
         .from('diagram_marks')
         .update({
           points,
           updated_at: new Date().toISOString()
         })
-        .eq('diagram_name', diagramName);
+        .eq('diagram_name', normalizedName);
+      if (updateError) {
+        console.error('Error updating marks:', updateError);
+        return;
+      }
     } else {
       // Si no existen, crear nuevo registro
-      await supabase
+      const { error: insertError } = await supabase
         .from('diagram_marks')
         .insert({
           diagram_name: normalizedName,
@@ -32,10 +41,14 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
+
+      if (insertError) {
+        console.error('Error inserting marks:', insertError);
+        return;
+      }
     }
   } catch (error) {
     console.error('Error saving diagram marks:', error);
-    throw error;
   }
 }
 
@@ -44,11 +57,16 @@ export async function getDiagramMarks(diagramName: string): Promise<Point[]> {
     // Normalizar el nombre del diagrama (eliminar extensión si existe)
     const normalizedName = diagramName.replace(/\.jpg$/, '');
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('diagram_marks')
       .select('points')
       .eq('diagram_name', normalizedName)
-      .single();
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting diagram marks:', error);
+      return [];
+    }
 
     return data?.points || [];
   } catch (error) {
