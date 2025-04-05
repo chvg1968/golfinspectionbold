@@ -109,7 +109,13 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     if (propertyContainer) {
       const propertyInput = propertyContainer.querySelector('input[name="property"]') as HTMLInputElement;
       const propertySelect = propertyContainer.querySelector('select[name="property"]') as HTMLSelectElement;
-      const propertyValue = (propertySelect?.value || propertyInput?.value || '').trim();
+      let propertyValue = '';
+      
+      if (propertySelect && propertySelect.selectedIndex >= 0) {
+        propertyValue = propertySelect.options[propertySelect.selectedIndex].text;
+      } else if (propertyInput) {
+        propertyValue = propertyInput.value;
+      }
 
       // Crear span con el valor de la propiedad
       const span = document.createElement('span');
