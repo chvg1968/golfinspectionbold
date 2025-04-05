@@ -42,10 +42,10 @@ export function DiagramCanvas({
   // Get signed URL for diagram image
   useEffect(() => {
     async function loadDiagramImage() {
+      if (!selectedProperty) return;
+      
       try {
-        // Si no hay propiedad seleccionada, usar el diagrama de rental #150
-        const diagramType = selectedProperty?.diagramType || 'rental-150';
-        const url = await getCartDiagramUrl(diagramType);
+        const url = await getCartDiagramUrl(selectedProperty.diagramType);
         if (url) {
           setImageUrl(url);
         }
