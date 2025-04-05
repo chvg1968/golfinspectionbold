@@ -1,14 +1,6 @@
 import { supabase } from './supabase';
 import { Point } from '../types';
 
-interface DiagramMarks {
-  id?: string;
-  diagram_name: string;
-  points: Point[];
-  created_at?: string;
-  updated_at?: string;
-}
-
 export async function saveDiagramMarks(diagramName: string, points: Point[]): Promise<void> {
   try {
     // Normalizar el nombre del diagrama (eliminar extensión si existe)
