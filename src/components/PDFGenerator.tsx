@@ -24,7 +24,7 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     buttons.forEach(button => button.style.display = 'none');
 
     const canvas = await html2canvas(contentRef.current, {
-      scale: 1.5,
+      scale: 1.0, // Reducir escala para disminuir tamaño
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
@@ -82,7 +82,7 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
     const [downloadVersion, emailVersion] = await Promise.all([
       generatePDF(0.9), // Alta calidad para descarga
-      generatePDF(0.5)  // Baja calidad para email
+      generatePDF(0.3)  // Calidad muy reducida para email
     ]);
 
     return {

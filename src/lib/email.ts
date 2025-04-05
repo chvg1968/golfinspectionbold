@@ -78,15 +78,9 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         throw new Error(`Error sending email to guest: ${response.text}`);
       }
     } else if (type === 'completed-form') {
-      // Dividir el PDF en chunks más pequeños
-      const chunks = [];
+      // Comprimir el PDF base64 para el email
       const pdfData = data.pdfBase64 || '';
-      const chunkSize = 250000; // Reducido a 250KB por chunk
       
-      for (let i = 0; i < pdfData.length; i += chunkSize) {
-        chunks.push(pdfData.slice(i, i + chunkSize));
-      }
-
       // Enviar al huésped
       const guestParams: EmailParams = {
         ...commonEmailParams,
@@ -97,7 +91,7 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         cart_type: data.inspectionData?.cartType || '',
         cart_number: data.inspectionData?.cartNumber || '',
         observations: data.inspectionData?.observations || 'No observations',
-        pdf_attachment: chunks[0] || '',
+        pdf_attachment: pdfData,
         reply_to: 'support@email.golfcartinspection.app'
       };
 
@@ -125,49 +119,42 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         throw new Error(`Error sending email to guest: ${guestResponse.text}`);
       }
 
-      // Enviar al administrador con todos los chunks
-      for (let i = 0; i < chunks.length; i++) {
-        const adminParams: EmailParams = {
-          ...commonEmailParams,
-          to_name: 'Admin',
-          to_email: 'hernancalendar01@gmail.com',
-          subject: `Completed Inspection Form - ${data.property}`,
-          property: data.property,
-          cart_type: data.inspectionData?.cartType || '',
-          cart_number: data.inspectionData?.cartNumber || '',
-          observations: data.inspectionData?.observations || 'No observations',
-          pdf_attachment: chunks[i],
-          reply_to: data.guestEmail
-        };
+      // Enviar al administrador
+      const adminParams: EmailParams = {
+        ...commonEmailParams,
+        to_name: 'Admin',
+        to_email: 'hernancalendar01@gmail.com',
+        subject: `Completed Inspection Form - ${data.property}`,
+        property: data.property,
+        cart_type: data.inspectionData?.cartType || '',
+        cart_number: data.inspectionData?.cartNumber || '',
+        observations: data.inspectionData?.observations || 'No observations',
+        pdf_attachment: pdfData,
+        reply_to: data.guestEmail
+      };
 
-        const adminResponse = await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID_COMPLETED,
-          {
-            ...adminParams,
-            content_type: 'text/html; charset=utf-8',
-            template_params: adminParams,
-            headers: {
-              'Message-ID': `${messageId}-part${i + 1}`,
-              'X-Mailer': 'GolfCartInspection/1.0',
-              'X-Entity-Ref-ID': `${messageId}-part${i + 1}`,
-              'List-Unsubscribe': '<mailto:unsubscribe@email.golfcartinspection.app>',
-              'Feedback-ID': messageId,
-              'Precedence': 'bulk',
-              'Auto-Submitted': 'auto-generated'
-            }
-          },
-          EMAILJS_PUBLIC_KEY
-        );
+      const adminResponse = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID_COMPLETED,
+        {
+          ...adminParams,
+          content_type: 'text/html; charset=utf-8',
+          template_params: adminParams,
+          headers: {
+            'Message-ID': messageId,
+            'X-Mailer': 'GolfCartInspection/1.0',
+            'X-Entity-Ref-ID': messageId,
+            'List-Unsubscribe': '<mailto:unsubscribe@email.golfcartinspection.app>',
+            'Feedback-ID': messageId,
+            'Precedence': 'bulk',
+            'Auto-Submitted': 'auto-generated'
+          }
+        },
+        EMAILJS_PUBLIC_KEY
+      );
 
-        if (adminResponse.status !== 200) {
-          throw new Error(`Error sending email part ${i + 1} to admin: ${adminResponse.text}`);
-        }
-
-        // Añadir un pequeño delay entre chunks
-        if (i < chunks.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
+      if (adminResponse.status !== 200) {
+        throw new Error(`Error sending email to admin: ${adminResponse.text}`);
       }
     }
 
