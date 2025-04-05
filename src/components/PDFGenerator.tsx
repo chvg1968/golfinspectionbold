@@ -18,6 +18,8 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 } | null> {
   if (!contentRef.current) return null;
   
+  let tempContainer: HTMLDivElement | null = null;
+  
   try {
     // Ocultar temporalmente los botones para la captura
     const buttons = contentRef.current.querySelectorAll('button');
@@ -36,24 +38,49 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que todo esté renderizado
 
     // Crear un contenedor temporal para el PDF
-    const tempContainer = document.createElement('div');
+    tempContainer = document.createElement('div');
     tempContainer.style.backgroundColor = '#ffffff';
     tempContainer.style.padding = '20px';
+    document.body.appendChild(tempContainer);
 
-    // Agregar el encabezado
-    const header = document.createElement('div');
-    header.style.textAlign = 'center';
-    header.style.marginBottom = '20px';
-    header.innerHTML = `
-      <img src="/diagrams/logo.png" style="height: 100px; margin-bottom: 10px;" />
-      <h1 style="font-size: 24px; font-weight: bold; color: #1f2937;">Golf Cart Inspection</h1>
-    `;
-    tempContainer.appendChild(header);
+    try {
+      // Agregar el encabezado
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginBottom = '20px';
+      header.innerHTML = `
+        <img src="/diagrams/logo.png" style="height: 100px; margin-bottom: 10px;" />
+        <h1 style="font-size: 24px; font-weight: bold; color: #1f2937;">Golf Cart Inspection</h1>
+      `;
+      tempContainer.appendChild(header);
 
-    // Agregar el contenido del formulario
-    tempContainer.appendChild(contentRef.current.cloneNode(true));
+      // Clonar el contenido del formulario
+      const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
+      // Asegurarse de que los canvas se rendericen correctamente
+      const originalCanvases = contentRef.current.getElementsByTagName('canvas');
+      const clonedCanvases = contentClone.getElementsByTagName('canvas');
+      for (let i = 0; i < originalCanvases.length; i++) {
+        const context = clonedCanvases[i].getContext('2d');
+        if (context) {
+          context.drawImage(originalCanvases[i], 0, 0);
+        }
+      }
+      tempContainer.appendChild(contentClone);
 
-    const canvas = await html2canvas(tempContainer, {
+      // Esperar a que las imágenes se carguen
+      await Promise.all(
+        Array.from(tempContainer.getElementsByTagName('img')).map(
+          img => new Promise((resolve, reject) => {
+            if (img.complete) resolve(true);
+            else {
+              img.onload = () => resolve(true);
+              img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+            }
+          })
+        )
+      );
+
+      const canvas = await html2canvas(tempContainer, {
       scale: 2.0, // Aumentar escala para mejor calidad
       useCORS: true,
       logging: false,
@@ -133,6 +160,11 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
   } catch (error: unknown) {
     console.error('Error generating PDF:', error);
     throw new Error('Failed to generate PDF: ' + (error instanceof Error ? error.message : String(error)));
+  } finally {
+    // Limpiar el contenedor temporal si existe
+    if (tempContainer && tempContainer.parentNode) {
+      tempContainer.parentNode.removeChild(tempContainer);
+    }
   }
 }
 
