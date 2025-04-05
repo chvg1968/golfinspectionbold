@@ -1,8 +1,9 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import SignaturePad from 'react-signature-canvas';
 import { format } from 'date-fns';
 import { Property, PROPERTIES, Point, DiagramData } from './types';
+import { sendToAirtable } from './components/AirtableService';
 import { supabase, uploadPDF } from './lib/supabase';
 import { GuestInformation } from './components/GuestInformation';
 import { PropertyInformation } from './components/PropertyInformation';
@@ -22,6 +23,16 @@ interface FormData {
   cartType: string;
   cartNumber: string;
   observations: string;
+}
+
+interface PDFVersion {
+  blob: Blob;
+  base64: string;
+}
+
+interface PDFResult {
+  download: PDFVersion;
+  email: PDFVersion;
 }
 
 function InspectionForm() {
@@ -49,14 +60,51 @@ function InspectionForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const formContentRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setIsGuestView(!!id);
-    if (id) {
-      loadInspection(id);
-    }
-  }, [id]);
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
 
-  const loadInspection = async (inspectionId: string) => {
+  const handlePropertyChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const property = PROPERTIES.find(p => p.name === e.target.value);
+    if (property) {
+      setSelectedProperty(property);
+      setFormData(prev => ({
+        ...prev,
+        property: property.name,
+        cartType: property.diagramType.includes('6seater') ? '6-Seater' : '4-Seater',
+        cartNumber: property.cartNumber
+      }));
+      setHistory([[]]);
+      setCurrentStep(0);
+    }
+  }, []);
+
+  const handlePointsChange = useCallback((newPoints: Point[]) => {
+    setHistory(prev => [...prev.slice(0, currentStep + 1), newPoints]);
+    setCurrentStep(prev => prev + 1);
+  }, [currentStep]);
+
+  const handleUndo = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  }, [currentStep]);
+
+  const clearCanvas = useCallback(() => {
+    if (!isGuestView) {
+      setHistory([[]]);
+      setCurrentStep(0);
+    }
+  }, [isGuestView]);
+
+  const clearSignature = useCallback(() => {
+    if (signaturePadRef.current) {
+      signaturePadRef.current.clear();
+    }
+  }, []);
+
+  const loadInspection = useCallback(async (inspectionId: string) => {
     setIsLoading(true);
     try {
       const { data: inspection, error } = await supabase
@@ -103,136 +151,47 @@ function InspectionForm() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handlePropertyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const property = PROPERTIES.find(p => p.name === e.target.value);
-    if (property) {
-      setSelectedProperty(property);
-      setFormData(prev => ({
-        ...prev,
-        property: property.name,
-        cartType: property.diagramType.includes('6seater') ? '6-Seater' : '4-Seater',
-        cartNumber: property.cartNumber
-      }));
-      setHistory([[]]);
-      setCurrentStep(0);
+  useEffect(() => {
+    setIsGuestView(!!id);
+    if (id) {
+      loadInspection(id);
     }
-  };
+  }, [id, loadInspection]);
 
-  const handlePointsChange = (newPoints: Point[]) => {
-    setHistory(prev => [...prev.slice(0, currentStep + 1), newPoints]);
-    setCurrentStep(prev => prev + 1);
-  };
-
-  const handleUndo = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const clearCanvas = () => {
-    if (!isGuestView) {
-      setHistory([[]]);
-      setCurrentStep(0);
-    }
-  };
-
-  const clearSignature = () => {
-    if (signaturePadRef.current) {
-      signaturePadRef.current.clear();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
     
     try {
-      if (isGuestView && id) {
-        if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
-          alert('Please provide your signature before submitting.');
-          setIsSending(false);
-          return;
-        }
+      // Validar firma en vista de invitado
+      if (isGuestView && !signaturePadRef.current?.toData()?.length) {
+        alert('Please sign the form before submitting.');
+        return;
+      }
 
-        const diagramData: DiagramData = {
-          points: history[currentStep] || [],
-          width: 600,
-          height: 400
-        };
+      // Generar PDF
+      const pdfData = await generateFormPDF({
+        contentRef: formContentRef
+      }) as PDFResult | null;
+      
+      if (!pdfData) {
+        throw new Error('Failed to generate PDF');
+      }
 
-        const signatureData = signaturePadRef.current?.toDataURL();
+      // Subir PDF a Supabase
+      const pdfBlob = pdfData.download.blob;
+      const pdfFilename = `inspection_${id || formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+      const pdfUrl = await uploadPDF(pdfBlob, pdfFilename);
 
-        const { error: updateError } = await supabase
-          .from('inspections')
-          .update({
-            observations: formData.observations,
-            diagram_data: diagramData,
-            signature_data: signatureData,
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', id);
+      if (!pdfUrl) {
+        throw new Error('Failed to upload PDF');
+      }
 
-        if (updateError) throw updateError;
-
-        const pdfData = await generateFormPDF({ contentRef: formContentRef });
-        if (!pdfData) throw new Error('Error generating PDF');
-
-        // Subir PDF a Supabase
-        // Formatear el nombre del archivo: Property_GuestName_InspectionDate
-        const formattedProperty = formData.property.replace(/[^a-zA-Z0-9]/g, '');
-        const formattedGuestName = formData.guestName.replace(/[^a-zA-Z0-9]/g, '');
-        const formattedDate = formData.inspectionDate.replace(/[^0-9]/g, '');
-        const pdfFileName = `${formattedProperty}_${formattedGuestName}_${formattedDate}.pdf`;
-        
-        let pdfUrl;
-        try {
-          pdfUrl = await uploadPDF(pdfData.download.blob, pdfFileName);
-        } catch (uploadError) {
-          console.error('Failed to upload PDF:', uploadError);
-          throw new Error('Could not upload inspection form. Please try again.');
-        }
-
-        // Enviar email con el enlace al PDF
-        await sendFormEmail('completed-form', {
-          guestName: formData.guestName,
-          guestEmail: formData.guestEmail,
-          property: formData.property,
-          inspectionData: {
-            observations: formData.observations,
-            cartType: formData.cartType,
-            cartNumber: formData.cartNumber,
-          },
-          pdf_attachment: pdfUrl,
-        });
-
-        // Descargar versión local
-        try {
-          const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
-          const downloadLink = document.createElement('a');
-          downloadLink.href = downloadUrl;
-          downloadLink.download = pdfFileName;
-          downloadLink.style.display = 'none';
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-          window.URL.revokeObjectURL(downloadUrl);
-        } catch (error) {
-          console.error('Error downloading PDF:', error);
-          throw new Error('Failed to download PDF');
-        }
-
-        alert('Form submitted successfully!');
-        navigate('/thank-you');
-      } else {
-        const { data: inspection, error: insertError } = await supabase
+      if (!isGuestView) {
+        // Crear nueva inspección
+        const { data: inspection, error } = await supabase
           .from('inspections')
           .insert([
             {
@@ -244,42 +203,128 @@ function InspectionForm() {
               cart_type: formData.cartType,
               cart_number: formData.cartNumber,
               diagram_data: {
-                points: history[currentStep] || [],
-                width: 600,
-                height: 400
+                points: history[currentStep] || []
               },
-              status: 'pending'
+              status: 'pending',
+              pdf_attachment: pdfUrl,
             }
           ])
           .select()
           .single();
 
-        if (insertError) throw insertError;
+        if (error) throw error;
 
-        const shareableLink = `${window.location.origin}/inspection/${inspection.id}`;
-        
+        // Enviar email al invitado
         await sendFormEmail('guest-form', {
-          guestName: formData.guestName,
-          guestEmail: formData.guestEmail,
+          to_email: formData.guestEmail,
+          to_name: formData.guestName,
           property: formData.property,
-          inspectionDate: formData.inspectionDate,
-          formLink: shareableLink,
+          cart_type: formData.cartType,
+          cart_number: formData.cartNumber,
+          inspection_date: formData.inspectionDate,
+          form_link: `${window.location.origin}/inspection/${inspection.id}`,
+          pdf_attachment: pdfUrl
         });
 
-        alert('Form link sent successfully to guest!');
-        setFormData({
-          guestName: '',
-          guestEmail: '',
-          guestPhone: '',
-          inspectionDate: format(new Date(), 'yyyy-MM-dd'),
-          property: '',
-          cartType: '',
-          cartNumber: '',
-          observations: '',
+        // Enviar datos a Airtable
+        if (pdfUrl) {
+          try {
+            await sendToAirtable({
+              guestName: formData.guestName,
+              inspectionDate: formData.inspectionDate,
+              property: formData.property,
+              formId: crypto.randomUUID()
+            }, pdfUrl);
+            console.log('Datos enviados exitosamente a Airtable');
+          } catch (airtableError) {
+            console.error('Error al enviar datos a Airtable:', airtableError);
+            // No lanzamos el error para no interrumpir el flujo principal
+          }
+        } else {
+          console.error('No se pudo enviar a Airtable: URL del PDF no disponible');
+        }
+
+        // Descargar versión local
+        try {
+          if (pdfData && pdfData.download && pdfData.download.blob) {
+            const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = pdfFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+          } else {
+            throw new Error('PDF data is not available for download');
+          }
+        } catch (downloadError) {
+          console.error('Error downloading PDF:', downloadError);
+          alert('Error downloading PDF. Please try again.');
+        }
+
+        navigate('/thank-you');
+      } else {
+        // Actualizar inspección existente
+        const { error } = await supabase
+          .from('inspections')
+          .update({
+            observations: formData.observations,
+            signature_data: signaturePadRef.current?.toDataURL(),
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            pdf_attachment: pdfUrl
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        // Actualizar en Airtable
+        try {
+          await sendToAirtable({
+            guestName: formData.guestName,
+            inspectionDate: formData.inspectionDate,
+            property: formData.property,
+            formId: id
+          }, pdfUrl);
+          console.log('Datos actualizados exitosamente en Airtable');
+        } catch (airtableError) {
+          console.error('Error al actualizar datos en Airtable:', airtableError);
+          // No lanzamos el error para no interrumpir el flujo principal
+        }
+
+        // Enviar email de confirmación
+        await sendFormEmail('completed-form', {
+          to_email: formData.guestEmail,
+          to_name: formData.guestName,
+          property: formData.property,
+          cart_type: formData.cartType,
+          cart_number: formData.cartNumber,
+          inspection_date: formData.inspectionDate,
+          observations: formData.observations,
+          pdf_attachment: pdfUrl
         });
-        setSelectedProperty(null);
-        setHistory([[]]);
-        setCurrentStep(0);
+
+        // Descargar versión local
+        try {
+          if (pdfData && pdfData.download && pdfData.download.blob) {
+            const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = pdfFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+          } else {
+            throw new Error('PDF data is not available for download');
+          }
+        } catch (downloadError) {
+          console.error('Error downloading PDF:', downloadError);
+          alert('Error downloading PDF. Please try again.');
+        }
+
+        navigate('/thank-you');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -287,7 +332,7 @@ function InspectionForm() {
     } finally {
       setIsSending(false);
     }
-  };
+  }, [formData, history, currentStep, id, isGuestView, navigate]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -296,53 +341,53 @@ function InspectionForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
-        <div ref={formContentRef}>
-          <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            {isGuestView ? 'Complete Inspection Form' : 'Create Inspection Form'}
-          </h1>
-          
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
+        <form ref={formRef} onSubmit={handleSubmit}>
+          <div ref={formContentRef} className="space-y-8">
             <GuestInformation
               formData={formData}
-              isGuestView={isGuestView}
               onInputChange={handleInputChange}
+              isGuestView={isGuestView}
             />
 
             <PropertyInformation
               formData={formData}
-              isGuestView={isGuestView}
               onPropertyChange={handlePropertyChange}
-            />
-
-            <DiagramCanvas
               isGuestView={isGuestView}
-              selectedProperty={selectedProperty}
-              history={history}
-              currentStep={currentStep}
-              onUndo={handleUndo}
-              onClear={clearCanvas}
-              onPointsChange={handlePointsChange}
             />
 
-            <SignatureSection
-              isGuestView={isGuestView}
-              observations={formData.observations}
-              onObservationsChange={handleInputChange}
-              signaturePadRef={signaturePadRef}
-              onClearSignature={clearSignature}
-            />
+            {selectedProperty && (
+              <DiagramCanvas
+                selectedProperty={selectedProperty}
+                history={history}
+                currentStep={currentStep}
+                onPointsChange={handlePointsChange}
+                onUndo={handleUndo}
+                onClear={clearCanvas}
+                isGuestView={isGuestView}
+              />
+            )}
 
-            <div className="flex justify-end space-x-4">
-              <button
-                type="submit"
-                disabled={isSending}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSending ? 'Processing...' : (isGuestView ? 'Sign and Download PDF' : 'Send to Guest')}
-              </button>
-            </div>
-          </form>
-        </div>
+            {isGuestView && (
+              <SignatureSection
+                signaturePadRef={signaturePadRef}
+                onClearSignature={clearSignature}
+                isGuestView={isGuestView}
+                observations={formData.observations}
+                onObservationsChange={handleInputChange}
+              />
+            )}
+          </div>
+
+          <div className="mt-8 flex justify-end">
+            <button
+              type="submit"
+              disabled={isSending}
+              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              {isSending ? 'Sending...' : isGuestView ? 'Submit Inspection' : 'Send to Guest'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
