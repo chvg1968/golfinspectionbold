@@ -105,25 +105,23 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
     
     // Convertir todos los campos a texto plano para el PDF
-    const propertyInputs = contentClone.querySelectorAll('input[name="property"]');
-    const propertySelects = contentClone.querySelectorAll('select[name="property"]');
+    const propertyContainer = contentClone.querySelector('div:has(> [name="property"])');
+    if (propertyContainer) {
+      const propertyInput = propertyContainer.querySelector('input[name="property"]') as HTMLInputElement;
+      const propertySelect = propertyContainer.querySelector('select[name="property"]') as HTMLSelectElement;
+      const propertyValue = (propertySelect?.value || propertyInput?.value || '').trim();
 
-    // Procesar inputs de property
-    propertyInputs.forEach(input => {
+      // Crear span con el valor de la propiedad
       const span = document.createElement('span');
-      span.textContent = (input as HTMLInputElement).value;
-      span.style.cssText = 'font-size: 14px; color: #374151;';
-      input.parentNode?.replaceChild(span, input);
-    });
+      span.textContent = propertyValue;
+      span.style.cssText = 'font-size: 14px; color: #374151; display: block; margin-top: 0.25rem;';
 
-    // Procesar selects de property
-    propertySelects.forEach(select => {
-      const selectElement = select as HTMLSelectElement;
-      const span = document.createElement('span');
-      span.textContent = selectElement.options[selectElement.selectedIndex]?.text || selectElement.value;
-      span.style.cssText = 'font-size: 14px; color: #374151;';
-      select.parentNode?.replaceChild(span, select);
-    });
+      // Limpiar el contenedor y agregar el span
+      const label = propertyContainer.querySelector('label');
+      propertyContainer.innerHTML = '';
+      if (label) propertyContainer.appendChild(label);
+      propertyContainer.appendChild(span);
+    }
 
     // Convertir otros inputs de texto
     const otherInputs = contentClone.getElementsByTagName('input');

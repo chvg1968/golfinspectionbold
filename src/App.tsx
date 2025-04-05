@@ -190,8 +190,6 @@ function InspectionForm() {
       }
 
       if (!isGuestView) {
-        // Crear nueva inspección sin confirmación
-
         // Crear nueva inspección
         const { data: inspection, error } = await supabase
           .from('inspections')
