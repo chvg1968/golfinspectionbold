@@ -185,6 +185,7 @@ function InspectionForm() {
         const pdfData = await generateFormPDF({ contentRef: formContentRef });
         if (!pdfData) throw new Error('Error generating PDF');
 
+        // Enviar email con la versión optimizada para email
         await sendFormEmail('completed-form', {
           guestName: formData.guestName,
           guestEmail: formData.guestEmail,
@@ -194,19 +195,28 @@ function InspectionForm() {
             cartType: formData.cartType,
             cartNumber: formData.cartNumber,
           },
-          pdfBase64: pdfData.base64,
+          pdfBase64: pdfData.email.base64,
         });
 
-        const pdfBlob = pdfData.blob;
+        // Descargar versión de alta calidad
+        const pdfBlob = pdfData.download.blob;
         const pdfFileName = `inspection-form-${formData.property.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-        const downloadUrl = window.URL.createObjectURL(pdfBlob);
-        const downloadLink = document.createElement('a');
-        downloadLink.href = downloadUrl;
-        downloadLink.download = pdfFileName;
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        window.URL.revokeObjectURL(downloadUrl);
+
+        try {
+          // Intentar descarga usando Blob URL
+          const downloadUrl = window.URL.createObjectURL(pdfBlob);
+          const downloadLink = document.createElement('a');
+          downloadLink.href = downloadUrl;
+          downloadLink.download = pdfFileName;
+          downloadLink.style.display = 'none';
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          window.URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+          console.error('Error downloading PDF:', error);
+          throw new Error('Failed to download PDF');
+        }
 
         alert('Form submitted successfully!');
         navigate('/thank-you');
