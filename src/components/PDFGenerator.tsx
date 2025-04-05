@@ -104,10 +104,10 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     // Clonar contenido
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
     
-    // Reemplazar inputs de solo lectura por texto plano
+    // Convertir todos los inputs y selects a texto plano para el PDF
     const inputs = contentClone.getElementsByTagName('input');
     Array.from(inputs).forEach(input => {
-      if (input.readOnly) {
+      if (input.type === 'text') {
         const span = document.createElement('span');
         span.textContent = input.value;
         span.style.cssText = 'font-size: 14px; color: #374151;';
@@ -115,15 +115,13 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
       }
     });
 
-    // Reemplazar selects de solo lectura por texto plano
+    // Convertir todos los selects a texto plano
     const selects = contentClone.getElementsByTagName('select');
     Array.from(selects).forEach(select => {
-      if (select.disabled) {
-        const span = document.createElement('span');
-        span.textContent = select.options[select.selectedIndex]?.text || select.value;
-        span.style.cssText = 'font-size: 14px; color: #374151;';
-        select.parentNode?.replaceChild(span, select);
-      }
+      const span = document.createElement('span');
+      span.textContent = select.options[select.selectedIndex]?.text || select.value;
+      span.style.cssText = 'font-size: 14px; color: #374151;';
+      select.parentNode?.replaceChild(span, select);
     });
     
     // Copiar canvas
