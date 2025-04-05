@@ -11,11 +11,14 @@ interface DiagramMarks {
 
 export async function saveDiagramMarks(diagramName: string, points: Point[]): Promise<void> {
   try {
+    // Normalizar el nombre del diagrama (eliminar extensión si existe)
+    const normalizedName = diagramName.replace(/\.jpg$/, '');
+
     // Primero, buscar si ya existen marcas para este diagrama
     const { data: existingMarks } = await supabase
       .from('diagram_marks')
-      .select()
-      .eq('diagram_name', diagramName)
+      .select('*')
+      .eq('diagram_name', normalizedName)
       .single();
 
     if (existingMarks) {
@@ -32,7 +35,7 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
       await supabase
         .from('diagram_marks')
         .insert({
-          diagram_name: diagramName,
+          diagram_name: normalizedName,
           points,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -46,10 +49,13 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
 
 export async function getDiagramMarks(diagramName: string): Promise<Point[]> {
   try {
+    // Normalizar el nombre del diagrama (eliminar extensión si existe)
+    const normalizedName = diagramName.replace(/\.jpg$/, '');
+
     const { data } = await supabase
       .from('diagram_marks')
       .select('points')
-      .eq('diagram_name', diagramName)
+      .eq('diagram_name', normalizedName)
       .single();
 
     return data?.points || [];
