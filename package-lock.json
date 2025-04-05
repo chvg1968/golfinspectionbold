@@ -8,7 +8,10 @@
       "name": "vite-react-typescript-starter",
       "version": "0.0.0",
       "dependencies": {
+<<<<<<< HEAD
         "@emailjs/browser": "^4.3.3",
+=======
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
         "@supabase/supabase-js": "^2.39.7",
         "date-fns": "^3.3.1",
         "html2canvas": "^1.4.1",
@@ -366,6 +369,7 @@
         "node": ">=6.9.0"
       }
     },
+<<<<<<< HEAD
     "node_modules/@emailjs/browser": {
       "version": "4.4.1",
       "resolved": "https://registry.npmjs.org/@emailjs/browser/-/browser-4.4.1.tgz",
@@ -374,6 +378,8 @@
         "node": ">=14.0.0"
       }
     },
+=======
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
     "node_modules/@esbuild/aix-ppc64": {
       "version": "0.21.5",
       "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",

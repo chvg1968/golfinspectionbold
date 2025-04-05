@@ -1,7 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Point, Property } from '../types';
+<<<<<<< HEAD
 import { getCartDiagramUrl } from '../lib/supabase';
+=======
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
 interface DiagramCanvasProps {
   isGuestView: boolean;
@@ -14,6 +17,7 @@ interface DiagramCanvasProps {
 }
 
 const COLOR_OPTIONS = [
+<<<<<<< HEAD
   { color: 'red', label: 'Rayones' },
   { color: '#00FF7F', label: 'Partes faltantes' },
   { color: '#BF40BF', label: 'Daños/Golpes' }
@@ -22,6 +26,16 @@ const COLOR_OPTIONS = [
 const POINT_SIZE = 8;
 const MAX_CANVAS_WIDTH = 1200; // Máximo ancho permitido
 const MAX_CANVAS_HEIGHT = 800; // Máximo alto permitido
+=======
+  { color: 'red', label: 'Scratches' },
+  { color: '#00FF7F', label: 'Missing parts' },
+  { color: '#BF40BF', label: 'Damage/Bumps' }
+];
+
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 400;
+const POINT_SIZE = 12;
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
 export function DiagramCanvas({
   isGuestView,
@@ -34,11 +48,15 @@ export function DiagramCanvas({
 }: DiagramCanvasProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentColor, setCurrentColor] = useState(COLOR_OPTIONS[0].color);
+<<<<<<< HEAD
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+=======
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
 
+<<<<<<< HEAD
   // Get signed URL for diagram image
   useEffect(() => {
     async function loadDiagramImage() {
@@ -60,12 +78,18 @@ export function DiagramCanvas({
   // Initialize background canvas
   useEffect(() => {
     if (!backgroundCanvasRef.current || !imageUrl) return;
+=======
+  // Initialize background canvas
+  useEffect(() => {
+    if (!backgroundCanvasRef.current || !selectedProperty) return;
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
     
     const canvas = backgroundCanvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     const img = new Image();
+<<<<<<< HEAD
     img.crossOrigin = 'anonymous';
     
     img.onload = () => {
@@ -96,6 +120,16 @@ export function DiagramCanvas({
 
     img.src = imageUrl;
   }, [imageUrl]);
+=======
+    img.onload = () => {
+      canvas.width = CANVAS_WIDTH;
+      canvas.height = CANVAS_HEIGHT;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = `/diagrams/${selectedProperty.diagramType}`;
+  }, [selectedProperty]);
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
   const drawPoint = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string, size: number) => {
     ctx.beginPath();
@@ -113,8 +147,13 @@ export function DiagramCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+<<<<<<< HEAD
     canvas.width = backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH;
     canvas.height = backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT;
+=======
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const currentPoints = history[currentStep] || [];
@@ -186,7 +225,10 @@ export function DiagramCanvas({
                     currentColor === color ? 'ring-2 ring-offset-2 ring-gray-500' : ''
                   }`}
                   style={{ backgroundColor: color }}
+<<<<<<< HEAD
                   title={COLOR_OPTIONS.find(opt => opt.color === color)?.label || ''}
+=======
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
                   onClick={() => setCurrentColor(color)}
                 />
               ))}
@@ -216,22 +258,38 @@ export function DiagramCanvas({
         )}
 
         {/* Canvas container */}
+<<<<<<< HEAD
         <div className="relative border border-gray-300 rounded-lg bg-white overflow-hidden" style={{ width: backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH, height: backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT }}>
+=======
+        <div className="relative w-[600px] h-[400px] border border-gray-300 rounded-lg bg-white">
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
           <div className="absolute inset-0">
             {/* Background canvas */}
             <canvas
               ref={backgroundCanvasRef}
+<<<<<<< HEAD
               width={backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH}
               height={backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT}
               className="absolute inset-0"
+=======
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              className="absolute inset-0 w-full h-full"
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
             />
             
             {/* Drawing canvas */}
             <canvas
               ref={canvasRef}
+<<<<<<< HEAD
               width={backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH}
               height={backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT}
               className={`absolute inset-0 ${
+=======
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              className={`absolute inset-0 w-full h-full ${
+>>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
                 isGuestView ? 'cursor-not-allowed' : 'cursor-crosshair'
               }`}
               onMouseDown={handleMouseDown}
