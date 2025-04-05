@@ -341,41 +341,56 @@ function InspectionForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Golf Cart Inspection</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            {isGuestView ? 'Please review and sign the inspection form' : 'Fill out the inspection details below'}
+          </p>
+        </div>
+
         <form ref={formRef} onSubmit={handleSubmit}>
           <div ref={formContentRef} className="space-y-8">
-            <GuestInformation
-              formData={formData}
-              onInputChange={handleInputChange}
-              isGuestView={isGuestView}
-            />
-
-            <PropertyInformation
-              formData={formData}
-              onPropertyChange={handlePropertyChange}
-              isGuestView={isGuestView}
-            />
-
-            {selectedProperty && (
-              <DiagramCanvas
-                selectedProperty={selectedProperty}
-                history={history}
-                currentStep={currentStep}
-                onPointsChange={handlePointsChange}
-                onUndo={handleUndo}
-                onClear={clearCanvas}
+            <div className="space-y-8">
+              <GuestInformation
+                formData={formData}
+                onInputChange={handleInputChange}
                 isGuestView={isGuestView}
               />
-            )}
 
-            {isGuestView && (
-              <SignatureSection
-                signaturePadRef={signaturePadRef}
-                onClearSignature={clearSignature}
+              <PropertyInformation
+                formData={formData}
+                onPropertyChange={handlePropertyChange}
                 isGuestView={isGuestView}
-                observations={formData.observations}
-                onObservationsChange={handleInputChange}
               />
-            )}
+
+              {selectedProperty && (
+                <div className="border-t pt-8">
+                  <h2 className="text-xl font-semibold mb-4">Cart Diagram</h2>
+                  <DiagramCanvas
+                    selectedProperty={selectedProperty}
+                    history={history}
+                    currentStep={currentStep}
+                    onPointsChange={handlePointsChange}
+                    onUndo={handleUndo}
+                    onClear={clearCanvas}
+                    isGuestView={isGuestView}
+                  />
+                </div>
+              )}
+
+              {isGuestView && (
+                <div className="border-t pt-8">
+                  <h2 className="text-xl font-semibold mb-4">Guest Signature</h2>
+                  <SignatureSection
+                    signaturePadRef={signaturePadRef}
+                    onClearSignature={clearSignature}
+                    isGuestView={isGuestView}
+                    observations={formData.observations}
+                    onObservationsChange={handleInputChange}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-8 flex justify-end">
