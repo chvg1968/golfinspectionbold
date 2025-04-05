@@ -105,17 +105,20 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
     
     // Convertir todos los campos a texto plano para el PDF
+    const originalPropertySelect = contentRef.current.querySelector('select[name="property"]') as HTMLSelectElement;
+    const originalPropertyInput = contentRef.current.querySelector('input[name="property"]') as HTMLInputElement;
+    
+    // Obtener el valor de property del elemento original
+    let propertyValue = '';
+    if (originalPropertySelect && originalPropertySelect.selectedIndex >= 0) {
+      propertyValue = originalPropertySelect.options[originalPropertySelect.selectedIndex].text;
+    } else if (originalPropertyInput) {
+      propertyValue = originalPropertyInput.value;
+    }
+
+    // Buscar el contenedor en el clon y reemplazar el contenido
     const propertyContainer = contentClone.querySelector('div:has(> [name="property"])');
     if (propertyContainer) {
-      const propertyInput = propertyContainer.querySelector('input[name="property"]') as HTMLInputElement;
-      const propertySelect = propertyContainer.querySelector('select[name="property"]') as HTMLSelectElement;
-      let propertyValue = '';
-      
-      if (propertySelect && propertySelect.selectedIndex >= 0) {
-        propertyValue = propertySelect.options[propertySelect.selectedIndex].text;
-      } else if (propertyInput) {
-        propertyValue = propertyInput.value;
-      }
 
       // Crear span con el valor de la propiedad
       const span = document.createElement('span');
