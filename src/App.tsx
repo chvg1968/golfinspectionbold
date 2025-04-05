@@ -186,8 +186,11 @@ function InspectionForm() {
         if (!pdfData) throw new Error('Error generating PDF');
 
         // Subir PDF a Supabase
-        const timestamp = new Date().toISOString().split('T')[0];
-        const pdfFileName = `inspection-${timestamp}-${formData.property.replace(/[^a-zA-Z0-9]/g, '')}.pdf`;
+        // Formatear el nombre del archivo: Property_GuestName_InspectionDate
+        const formattedProperty = formData.property.replace(/[^a-zA-Z0-9]/g, '');
+        const formattedGuestName = formData.guestName.replace(/[^a-zA-Z0-9]/g, '');
+        const formattedDate = formData.inspectionDate.replace(/[^0-9]/g, '');
+        const pdfFileName = `${formattedProperty}_${formattedGuestName}_${formattedDate}.pdf`;
         
         let pdfUrl;
         try {
