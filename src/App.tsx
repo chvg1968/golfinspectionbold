@@ -3,7 +3,7 @@ import { Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import SignaturePad from 'react-signature-canvas';
 import { format } from 'date-fns';
 import { Property, PROPERTIES, Point, DiagramData } from './types';
-import { supabase } from './lib/supabase';
+import { supabase, uploadPDF } from './lib/supabase';
 import { GuestInformation } from './components/GuestInformation';
 import { PropertyInformation } from './components/PropertyInformation';
 import { DiagramCanvas } from './components/DiagramCanvas';
@@ -185,7 +185,12 @@ function InspectionForm() {
         const pdfData = await generateFormPDF({ contentRef: formContentRef });
         if (!pdfData) throw new Error('Error generating PDF');
 
-        // Enviar email con la versión optimizada para email
+        // Subir PDF a Supabase
+        const pdfFileName = `inspection-form-${formData.property.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.pdf`;
+        const pdfUrl = await uploadPDF(pdfData.download.blob, pdfFileName);
+        if (!pdfUrl) throw new Error('Error uploading PDF');
+
+        // Enviar email con el enlace al PDF
         await sendFormEmail('completed-form', {
           guestName: formData.guestName,
           guestEmail: formData.guestEmail,
@@ -195,16 +200,12 @@ function InspectionForm() {
             cartType: formData.cartType,
             cartNumber: formData.cartNumber,
           },
-          pdfBase64: pdfData.email.base64,
+          pdfUrl,
         });
 
-        // Descargar versión de alta calidad
-        const pdfBlob = pdfData.download.blob;
-        const pdfFileName = `inspection-form-${formData.property.replace(/\s+/g, '-').toLowerCase()}.pdf`;
-
+        // Descargar versión local
         try {
-          // Intentar descarga usando Blob URL
-          const downloadUrl = window.URL.createObjectURL(pdfBlob);
+          const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
           const downloadLink = document.createElement('a');
           downloadLink.href = downloadUrl;
           downloadLink.download = pdfFileName;
