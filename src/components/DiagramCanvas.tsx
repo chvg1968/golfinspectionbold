@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { Point, Property } from '../types';
 import { getCartDiagramUrl } from '../lib/supabase';
+import { saveDiagramMarks, getDiagramMarks } from '../lib/diagram-marks';
 
 interface DiagramCanvasProps {
   isGuestView: boolean;
@@ -41,22 +42,29 @@ export function DiagramCanvas({
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
-  // Get signed URL for diagram image
+  // Get signed URL for diagram image and load saved marks
   useEffect(() => {
-    async function loadDiagramImage() {
+    async function loadDiagramData() {
       if (!selectedProperty) return;
       
       try {
+        // Cargar imagen del diagrama
         const url = await getCartDiagramUrl(selectedProperty.diagramType);
         if (url) {
           setImageUrl(url);
         }
+
+        // Cargar marcas guardadas
+        const savedPoints = await getDiagramMarks(selectedProperty.diagramType);
+        if (savedPoints.length > 0) {
+          onPointsChange(savedPoints);
+        }
       } catch (error) {
-        console.error('Error loading diagram image:', error);
+        console.error('Error loading diagram data:', error);
       }
     }
 
-    loadDiagramImage();
+    loadDiagramData();
   }, [selectedProperty]);
 
   // Initialize background canvas
@@ -166,7 +174,15 @@ export function DiagramCanvas({
     
     const newPoint = { x, y, color: currentColor, size: POINT_SIZE };
     const currentPoints = history[currentStep] || [];
-    onPointsChange([...currentPoints, newPoint]);
+    const updatedPoints = [...currentPoints, newPoint];
+    onPointsChange(updatedPoints);
+
+    // Guardar puntos en la base de datos
+    if (selectedProperty) {
+      saveDiagramMarks(selectedProperty.diagramType, updatedPoints).catch(error => {
+        console.error('Error saving diagram marks:', error);
+      });
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -178,7 +194,15 @@ export function DiagramCanvas({
     
     const newPoint = { x, y, color: currentColor, size: POINT_SIZE };
     const currentPoints = history[currentStep] || [];
-    onPointsChange([...currentPoints, newPoint]);
+    const updatedPoints = [...currentPoints, newPoint];
+    onPointsChange(updatedPoints);
+
+    // Guardar puntos en la base de datos
+    if (selectedProperty) {
+      saveDiagramMarks(selectedProperty.diagramType, updatedPoints).catch(error => {
+        console.error('Error saving diagram marks:', error);
+      });
+    }
   };
 
   const handleMouseUp = () => {
@@ -228,7 +252,16 @@ export function DiagramCanvas({
             <div className="flex flex-col gap-2">
               <button
                 type="button"
-                onClick={onUndo}
+                onClick={() => {
+                  onUndo();
+                  // Al deshacer, guardar el estado anterior
+                  if (selectedProperty && currentStep > 0) {
+                    const previousPoints = history[currentStep - 1] || [];
+                    saveDiagramMarks(selectedProperty.diagramType, previousPoints).catch(error => {
+                      console.error('Error saving diagram marks after undo:', error);
+                    });
+                  }
+                }}
                 disabled={currentStep === 0}
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 title="Undo"
@@ -237,7 +270,15 @@ export function DiagramCanvas({
               </button>
               <button
                 type="button"
-                onClick={onClear}
+                onClick={() => {
+                  onClear();
+                  // Al limpiar, eliminar todas las marcas
+                  if (selectedProperty) {
+                    saveDiagramMarks(selectedProperty.diagramType, []).catch(error => {
+                      console.error('Error clearing diagram marks:', error);
+                    });
+                  }
+                }}
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                 title="Clear"
               >
