@@ -44,11 +44,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '150', 
-<<<<<<< HEAD
-    diagramType: 'rental_150.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'rental_150.jpg'
   },
   { 
     id: 'rental_6_passenger_144', 
@@ -56,11 +52,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '144', 
-<<<<<<< HEAD
-    diagramType: 'rental_144.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'rental_144.jpg'
   },
   { 
     id: 'villa_flora_10180', 
@@ -68,11 +60,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '18', 
-<<<<<<< HEAD
-    diagramType: 'villaflora_10180.jpg' 
-=======
-    diagramType: '4seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'villaflora_10180.jpg'
   },
   { 
     id: 'ocean_haven_208', 
@@ -80,11 +68,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '71', 
-<<<<<<< HEAD
-    diagramType: 'oceanhaven_208.jpg' 
-=======
-    diagramType: '4seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'oceanhaven_208.jpg'
   },
   { 
     id: 'casa_prestige_g7_4_passenger', 
@@ -92,11 +76,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '22', 
-<<<<<<< HEAD
-    diagramType: 'casaprestige_4.jpg' 
-=======
-    diagramType: '4seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'casaprestige_4.jpg'
   },
   { 
     id: 'casa_prestige_g7_6_passenger', 
@@ -104,11 +84,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '193', 
-<<<<<<< HEAD
-    diagramType: 'casaprestige_6.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'casaprestige_6.jpg'
   },
   { 
     id: 'villa_tiffany_10389', 
@@ -116,11 +92,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '136', 
-<<<<<<< HEAD
-    diagramType: 'villatiffany_10389.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'villatiffany_10389.jpg'
   },
   { 
     id: 'villa_palacio_7256', 
@@ -128,11 +100,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '130', 
-<<<<<<< HEAD
-    diagramType: 'villapalacio_7256.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'villapalacio_7256.jpg'
   },
   { 
     id: 'villa_clara_3325', 
@@ -140,11 +108,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '119', 
-<<<<<<< HEAD
-    diagramType: 'villaclara_3325.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'villaclara_3325.jpg'
   },
   { 
     id: 'villa_paloma_5138', 
@@ -152,10 +116,6 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '101', 
-<<<<<<< HEAD
-    diagramType: 'villapaloma_5138.jpg' 
-=======
-    diagramType: '6seater.jpg' 
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
+    diagramType: 'villapaloma_5138.jpg'
   }
 ];
