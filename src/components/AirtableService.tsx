@@ -10,13 +10,14 @@ interface InspectionFormData {
 }
 
 export async function sendToAirtable(formData: InspectionFormData, pdfLink: string) {
+    console.log('Iniciando envío a Airtable...', { formData, pdfLink });
     try {
         interface AirtableFields {
             'Form Id': string;
-            'Inspection Date': string;
             'Guest Name': string;
             'Property': string;
-            'PDF Link': { url: string };
+            'Inspection Date': string;
+            'PDF URL': string;
         }
 
         const fields: AirtableFields = {
@@ -24,12 +25,16 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
             'Inspection Date': formData.inspectionDate,
             'Guest Name': formData.guestName,
             'Property': formData.property,
-            'PDF Link': { url: pdfLink }
+            'PDF URL': pdfLink
         };
 
         const airtableData = { fields };
 
         // Corregir el acceso a la variable de entorno
+        if (!import.meta.env.VITE_AIRTABLE_BASE_ID || !import.meta.env.VITE_AIRTABLE_TABLE_NAME || !import.meta.env.VITE_AIRTABLE_API_KEY) {
+            throw new Error('Faltan variables de entorno de Airtable');
+        }
+
         const baseUrl = `https://api.airtable.com/v0/${import.meta.env.VITE_AIRTABLE_BASE_ID}/${import.meta.env.VITE_AIRTABLE_TABLE_NAME}`;
         const headers = {
             'Authorization': `Bearer ${import.meta.env.VITE_AIRTABLE_API_KEY}`,
