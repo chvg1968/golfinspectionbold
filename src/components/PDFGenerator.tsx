@@ -23,16 +23,34 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     const buttons = contentRef.current.querySelectorAll('button');
     buttons.forEach(button => button.style.display = 'none');
 
+    // Esperar a que las imágenes y canvas estén cargados
+    await Promise.all(
+      Array.from(contentRef.current.getElementsByTagName('img')).map(
+        img => new Promise(resolve => {
+          if (img.complete) resolve(true);
+          else img.onload = () => resolve(true);
+        })
+      )
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que todo esté renderizado
+
     const canvas = await html2canvas(contentRef.current, {
-      scale: 0.8, // Reducir escala para disminuir tamaño
+      scale: 1.0,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
       imageTimeout: 0,
       allowTaint: true,
       removeContainer: true,
-      width: contentRef.current.offsetWidth * 0.8,
-      height: contentRef.current.offsetHeight * 0.8
+      onclone: (clonedDoc) => {
+        const canvases = clonedDoc.getElementsByTagName('canvas');
+        Array.from(canvases).forEach(canvas => {
+          canvas.style.display = 'block';
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+        });
+      }
     });
 
     // Restaurar los botones
