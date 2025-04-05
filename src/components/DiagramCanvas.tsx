@@ -102,6 +102,7 @@ export function DiagramCanvas({
     ctx.arc(x, y, size / 2, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
+    ctx.closePath();
   };
 
   // Redraw all points
@@ -112,51 +113,40 @@ export function DiagramCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Match drawing canvas size to background canvas
-    if (backgroundCanvasRef.current) {
-      canvas.width = backgroundCanvasRef.current.width;
-      canvas.height = backgroundCanvasRef.current.height;
-    }
+    canvas.width = backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH;
+    canvas.height = backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw all points up to current step
-    if (currentStep >= 0 && history.length > 0) {
-      const points = history[currentStep];
-      points.forEach(point => {
-        drawPoint(ctx, point.x, point.y, point.color, POINT_SIZE);
-      });
-    }
+    const currentPoints = history[currentStep] || [];
+    
+    currentPoints.forEach(point => {
+      drawPoint(ctx, point.x, point.y, point.color, point.size);
+    });
   }, [history, currentStep]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isGuestView) return;
+    if (!canvasRef.current || isGuestView) return;
     setIsDrawing(true);
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
+    
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    const newPoints = [...(history[currentStep] || []), { x, y, color: currentColor }];
-    onPointsChange(newPoints);
+    
+    const newPoint = { x, y, color: currentColor, size: POINT_SIZE };
+    const currentPoints = history[currentStep] || [];
+    onPointsChange([...currentPoints, newPoint]);
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDrawing || isGuestView) return;
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
+    if (!isDrawing || !canvasRef.current || isGuestView) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    const newPoints = [...history[currentStep], { x, y, color: currentColor }];
-    onPointsChange(newPoints);
+    
+    const newPoint = { x, y, color: currentColor, size: POINT_SIZE };
+    const currentPoints = history[currentStep] || [];
+    onPointsChange([...currentPoints, newPoint]);
   };
 
   const handleMouseUp = () => {
@@ -167,13 +157,11 @@ export function DiagramCanvas({
     <section className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-700">Diagram</h2>
       
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 items-center justify-center">
+      {/* Color convention */}
+      <div className="flex items-center gap-6 mb-4">
+        <span className="text-sm font-medium text-gray-700">Color Reference:</span>
         {COLOR_OPTIONS.map(({ color, label }) => (
-          <div
-            key={color}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-200"
-          >
+          <div key={color} className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded-full"
               style={{ backgroundColor: color }}
