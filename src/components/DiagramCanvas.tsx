@@ -35,9 +35,11 @@ export function DiagramCanvas({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentColor, setCurrentColor] = useState(COLOR_OPTIONS[0].color);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   // Get signed URL for diagram image
   useEffect(() => {
@@ -93,6 +95,10 @@ export function DiagramCanvas({
       // Draw image at full canvas size
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
 
+      // Store the loaded image for reuse
+      imageRef.current = img;
+      setImageLoaded(true);
+
       // Synchronize drawing canvas size and copy background
       if (canvasRef.current) {
         const drawingCtx = canvasRef.current.getContext('2d');
@@ -105,6 +111,11 @@ export function DiagramCanvas({
     };
 
     img.src = imageUrl;
+
+    return () => {
+      setImageLoaded(false);
+      imageRef.current = null;
+    };
   }, [imageUrl]);
 
   const drawPoint = (ctx: CanvasRenderingContext2D, x: number, y: number, color: string, size: number) => {
@@ -117,31 +128,33 @@ export function DiagramCanvas({
 
   // Redraw all points and background
   useEffect(() => {
-    if (!canvasRef.current || !backgroundCanvasRef.current) return;
+    if (!canvasRef.current || !imageLoaded || !imageRef.current) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     // Keep canvas size synchronized with background
-    if (canvas.width !== backgroundCanvasRef.current.width || 
-        canvas.height !== backgroundCanvasRef.current.height) {
-      canvas.width = backgroundCanvasRef.current.width;
-      canvas.height = backgroundCanvasRef.current.height;
+    if (canvas.width !== backgroundCanvasRef.current?.width || 
+        canvas.height !== backgroundCanvasRef.current?.height) {
+      canvas.width = backgroundCanvasRef.current?.width || 0;
+      canvas.height = backgroundCanvasRef.current?.height || 0;
     }
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw background image first
-    ctx.drawImage(backgroundCanvasRef.current, 0, 0);
+    if (imageRef.current) {
+      ctx.drawImage(imageRef.current, 0, 0, canvas.width, canvas.height);
+    }
 
     // Then draw all points
     const currentPoints = history[currentStep] || [];
     currentPoints.forEach(point => {
       drawPoint(ctx, point.x, point.y, point.color, point.size);
     });
-  }, [history, currentStep]);
+  }, [history, currentStep, imageLoaded]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!canvasRef.current || isGuestView) return;
