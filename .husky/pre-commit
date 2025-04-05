@@ -1,0 +1,12 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Detect secrets in staged files
+if git diff --cached --name-only | xargs grep -l "VITE_.*_KEY\|API_KEY\|TOKEN\|SECRET\|PASSWORD"; then
+  echo "WARNING: Potential secrets detected in staged files!"
+  echo "Please remove any sensitive information before committing."
+  exit 1
+fi
+
+# Run other pre-commit checks
+npm run lint
