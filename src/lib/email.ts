@@ -16,7 +16,7 @@ interface EmailParams {
   cart_type?: string;
   cart_number?: string;
   observations?: string;
-  pdf_file?: string;
+  pdf_attachment?: string;
   reply_to?: string;
   subject?: string;
   message_id?: string;
@@ -91,7 +91,7 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         cart_type: data.inspectionData?.cartType || '',
         cart_number: data.inspectionData?.cartNumber || '',
         observations: data.inspectionData?.observations || 'No observations',
-        pdf_file: pdfData,
+        pdf_attachment: pdfData,
         reply_to: 'support@email.golfcartinspection.app'
       };
 
@@ -129,7 +129,7 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         cart_type: data.inspectionData?.cartType || '',
         cart_number: data.inspectionData?.cartNumber || '',
         observations: data.inspectionData?.observations || 'No observations',
-        pdf_file: pdfData,
+        pdf_attachment: pdfData,
         reply_to: data.guestEmail
       };
 

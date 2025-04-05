@@ -210,7 +210,7 @@ function InspectionForm() {
             cartType: formData.cartType,
             cartNumber: formData.cartNumber,
           },
-          pdfUrl,
+          pdf_attachment: pdfUrl,
         });
 
         // Descargar versión local
