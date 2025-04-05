@@ -10,7 +10,13 @@ interface InspectionFormData {
 }
 
 export async function sendToAirtable(formData: InspectionFormData, pdfLink: string) {
-    console.log('Iniciando envío a Airtable...', { formData, pdfLink });
+    console.log('Iniciando envío a Airtable...', {
+        formData,
+        pdfLink,
+        baseId: import.meta.env.VITE_AIRTABLE_BASE_ID,
+        tableName: import.meta.env.VITE_AIRTABLE_TABLE_NAME,
+        hasApiKey: !!import.meta.env.VITE_AIRTABLE_API_KEY
+    });
     try {
         interface AirtableFields {
             'Form Id': string;
@@ -42,6 +48,8 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         };
 
         // Crear nuevo registro
+        console.log('Enviando a Airtable:', { url: baseUrl, data: airtableData });
+
         const response = await fetch(
             baseUrl,
             {
@@ -50,6 +58,8 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
                 body: JSON.stringify(airtableData)
             }
         );
+
+        console.log('Respuesta de Airtable:', { status: response.status, statusText: response.statusText });
 
         const responseData = await response.json();
 
