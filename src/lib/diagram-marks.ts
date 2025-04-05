@@ -6,46 +6,29 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
     // Normalizar el nombre del diagrama (eliminar extensión si existe)
     const normalizedName = diagramName.replace(/\.jpg$/, '');
 
-    // Primero, buscar si ya existen marcas para este diagrama
-    const { data: existingMarks, error: selectError } = await supabase
+    // Primero, eliminar cualquier registro existente para este diagrama
+    const { error: deleteError } = await supabase
       .from('diagram_marks')
-      .select('id')
-      .eq('diagram_name', normalizedName)
-      .maybeSingle();
+      .delete()
+      .eq('diagram_name', normalizedName);
 
-    if (selectError) {
-      console.error('Error checking existing marks:', selectError);
+    if (deleteError) {
+      console.error('Error deleting existing marks:', deleteError);
       return;
     }
 
-    if (existingMarks) {
-      // Si existen, actualizar
-      const { error: updateError } = await supabase
-        .from('diagram_marks')
-        .update({
-          points,
-          updated_at: new Date().toISOString()
-        })
-        .eq('diagram_name', normalizedName);
-      if (updateError) {
-        console.error('Error updating marks:', updateError);
-        return;
-      }
-    } else {
-      // Si no existen, crear nuevo registro
-      const { error: insertError } = await supabase
-        .from('diagram_marks')
-        .insert({
-          diagram_name: normalizedName,
-          points,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        });
-
-      if (insertError) {
-        console.error('Error inserting marks:', insertError);
-        return;
-      }
+    // Crear nuevo registro
+    const { error: insertError } = await supabase
+      .from('diagram_marks')
+      .insert({
+        diagram_name: normalizedName,
+        points,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    if (insertError) {
+      console.error('Error inserting marks:', insertError);
+      return;
     }
   } catch (error) {
     console.error('Error saving diagram marks:', error);
@@ -61,9 +44,15 @@ export async function getDiagramMarks(diagramName: string): Promise<Point[]> {
       .from('diagram_marks')
       .select('points')
       .eq('diagram_name', normalizedName)
-      .maybeSingle();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
     if (error) {
+      if (error.code === 'PGRST116') {
+        // No hay marcas para este diagrama
+        return [];
+      }
       console.error('Error getting diagram marks:', error);
       return [];
     }
