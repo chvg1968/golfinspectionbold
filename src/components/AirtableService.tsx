@@ -48,7 +48,7 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
 
         // Validar que todos los campos tengan valor
         const emptyFields = Object.entries(fields)
-            .filter(([_, value]) => !value)
+            .filter(([, value]) => !value)
             .map(([key]) => key);
 
         if (emptyFields.length > 0) {
@@ -68,8 +68,18 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
             'Content-Type': 'application/json'
         };
 
-        // Crear nuevo registro
-        console.log('Enviando a Airtable:', { url: baseUrl, data: airtableData });
+        // Verificar si ya existe un registro con el mismo Form Id
+        const searchUrl = `${baseUrl}?filterByFormula=${encodeURIComponent(`{Form Id}='${fields['Form Id']}'`)}`;        
+        const searchResponse = await fetch(searchUrl, { headers });
+        const searchData = await searchResponse.json();
+
+        if (searchData.records && searchData.records.length > 0) {
+            console.log('El registro ya existe en Airtable');
+            return searchData.records[0];
+        }
+
+        // Crear nuevo registro si no existe
+        console.log('Enviando nuevo registro a Airtable:', { url: baseUrl, data: airtableData });
 
         const response = await fetch(
             baseUrl,

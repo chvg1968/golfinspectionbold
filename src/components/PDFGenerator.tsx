@@ -24,8 +24,11 @@ const generatePDFVersion = async (canvas: HTMLCanvasElement, quality: number): P
     unit: 'px',
     format: 'a4',
     compress: true,
-    hotfixes: ['px_scaling']
+    hotfixes: ['px_scaling'],
+    putOnlyUsedFonts: true
   });
+  
+  pdf.setFontSize(12);
 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -75,16 +78,16 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
     // Crear contenedor temporal
     tempContainer = document.createElement('div');
-    tempContainer.style.cssText = 'background-color: #ffffff; padding: 20px;';
+    tempContainer.style.cssText = 'background-color: #ffffff; padding: 10px;';
     document.body.appendChild(tempContainer);
 
     // Agregar encabezado
     const header = document.createElement('div');
-    header.style.cssText = 'text-align: center; margin-bottom: 30px; width: 100%;';
+    header.style.cssText = 'text-align: center; margin-bottom: 15px; width: 100%;';
     header.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-        <img src="/diagrams/logo.png" style="height: 100px; object-fit: contain;" />
-        <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
+        <img src="/diagrams/logo.png" style="height: 120px; object-fit: contain;" />
+        <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
       </div>
     `;
     tempContainer.appendChild(header);
