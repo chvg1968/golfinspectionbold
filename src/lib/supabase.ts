@@ -47,20 +47,17 @@ export async function uploadPDF(blob: Blob, filename: string): Promise<string | 
       throw new Error(`Failed to upload PDF: ${uploadError.message}`);
     }
 
-    // Obtener URL pública
+    // Obtener URL pública directamente de Supabase
     const { data: urlData } = supabase
       .storage
       .from('pdfs')
-      .getPublicUrl(`public/${safeFileName}`);
+      .getPublicUrl(safeFileName);
 
     if (!urlData?.publicUrl) {
       throw new Error('Failed to get public URL');
     }
 
-    // Asegurarnos de que la URL tenga el formato correcto
-    const baseUrl = supabaseUrl.replace('.supabase.co', '').replace('https://', '');
-    const publicUrl = `https://${baseUrl}.supabase.co/storage/v1/object/public/pdfs/${safeFileName}`;
-    return publicUrl;
+    return urlData.publicUrl;
   } catch (error) {
     console.error('Error uploading PDF:', error);
     throw error; // Propagar el error para mejor manejo
