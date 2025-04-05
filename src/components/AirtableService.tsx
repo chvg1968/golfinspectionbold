@@ -10,29 +10,50 @@ interface InspectionFormData {
 }
 
 export async function sendToAirtable(formData: InspectionFormData, pdfLink: string) {
+    // Validar variables de entorno
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+    const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+    const apiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
+
+    if (!baseId || !tableName || !apiKey) {
+        const missingVars = [];
+        if (!baseId) missingVars.push('VITE_AIRTABLE_BASE_ID');
+        if (!tableName) missingVars.push('VITE_AIRTABLE_TABLE_NAME');
+        if (!apiKey) missingVars.push('VITE_AIRTABLE_API_KEY');
+        throw new Error(`Faltan variables de entorno de Airtable: ${missingVars.join(', ')}`);
+    }
+
     console.log('Iniciando envío a Airtable...', {
         formData,
         pdfLink,
-        baseId: import.meta.env.VITE_AIRTABLE_BASE_ID,
-        tableName: import.meta.env.VITE_AIRTABLE_TABLE_NAME,
-        hasApiKey: !!import.meta.env.VITE_AIRTABLE_API_KEY
+        baseId,
+        tableName
     });
     try {
         interface AirtableFields {
-            'Form_Id': string;
-            'Guest_Name': string;
+            'Form Id': string;
+            'Guest Name': string;
             'Property': string;
-            'Inspection_Date': string;
-            'PDF_Link': string;
+            'Inspection Date': string;
+            'PDF Link': string;
         }
 
         const fields: AirtableFields = {
-            'Form_Id': formData.formId || crypto.randomUUID(),
-            'Inspection_Date': formData.inspectionDate,
-            'Guest_Name': formData.guestName,
+            'Form Id': formData.formId || crypto.randomUUID(),
+            'Inspection Date': formData.inspectionDate,
+            'Guest Name': formData.guestName,
             'Property': formData.property,
-            'PDF_Link': pdfLink
+            'PDF Link': pdfLink
         };
+
+        // Validar que todos los campos tengan valor
+        const emptyFields = Object.entries(fields)
+            .filter(([_, value]) => !value)
+            .map(([key]) => key);
+
+        if (emptyFields.length > 0) {
+            throw new Error(`Los siguientes campos están vacíos: ${emptyFields.join(', ')}`);
+        }
 
         const airtableData = { fields };
 
@@ -59,12 +80,20 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
             }
         );
 
-        console.log('Respuesta de Airtable:', { status: response.status, statusText: response.statusText });
-
         const responseData = await response.json();
+        console.log('Respuesta de Airtable:', { 
+            status: response.status, 
+            statusText: response.statusText,
+            data: responseData
+        });
 
         if (!response.ok) {
-            console.error('Respuesta detallada de Airtable:', responseData);
+            console.error('Error detallado de Airtable:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: responseData.error,
+                fields: fields
+            });
             throw new Error(`Error Airtable: ${responseData.error?.message || 'Error desconocido'}`);
         }
 

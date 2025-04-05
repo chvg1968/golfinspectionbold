@@ -182,7 +182,7 @@ function InspectionForm() {
 
       // Subir PDF a Supabase
       const pdfBlob = pdfData.download.blob;
-      const pdfFilename = `inspection_${id || formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${format(new Date(), 'yyyyMMdd')}.pdf`;
+      const pdfFilename = `${formData.property}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${formData.inspectionDate}.pdf`;
       const pdfUrl = await uploadPDF(pdfBlob, pdfFilename);
 
       if (!pdfUrl) {
@@ -380,7 +380,7 @@ function InspectionForm() {
               </div>
 
               <div className="border-t pt-8">
-                <h2 className="text-xl font-semibold mb-4">Terms and Signature</h2>
+
                 <SignatureSection
                   signaturePadRef={signaturePadRef}
                   onClearSignature={clearSignature}

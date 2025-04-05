@@ -21,7 +21,7 @@ const COLOR_OPTIONS = [
 
 const POINT_SIZE = 8;
 const MAX_CANVAS_WIDTH = 1200;  // Aumentar ancho para mejor calidad
-const MAX_CANVAS_HEIGHT = 900;  // Aumentar alto proporcionalmente
+const MAX_CANVAS_HEIGHT = 700;  // Aumentar alto proporcionalmente
 
 export function DiagramCanvas({
   isGuestView,
@@ -187,10 +187,10 @@ export function DiagramCanvas({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-700">Diagram</h2>
+    
       
       {/* Color convention */}
-      <div className="flex items-center gap-6 mb-4">
+      <div className="flex items-center justify-center gap-6 mb-4">
         <span className="text-sm font-medium text-gray-700">Color Reference:</span>
         {COLOR_OPTIONS.map(({ color, label }) => (
           <div key={color} className="flex items-center gap-2">

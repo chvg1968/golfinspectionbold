@@ -80,10 +80,12 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
     // Agregar encabezado
     const header = document.createElement('div');
-    header.style.cssText = 'text-align: center; margin-bottom: 20px;';
+    header.style.cssText = 'text-align: center; margin-bottom: 30px; width: 100%;';
     header.innerHTML = `
-      <img src="/diagrams/logo.png" style="height: 100px; margin-bottom: 10px;" />
-      <h1 style="font-size: 24px; font-weight: bold; color: #1f2937;">Golf Cart Inspection</h1>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+        <img src="/diagrams/logo.png" style="height: 100px; object-fit: contain;" />
+        <h1 style="font-size: 24px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
+      </div>
     `;
     tempContainer.appendChild(header);
 
