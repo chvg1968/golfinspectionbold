@@ -28,7 +28,7 @@ function generateMessageId(): string {
   return `<${timestamp}.${random}@email.golfcartinspection.app>`;
 }
 
-export async function sendFormEmail(type: 'guest-form' | 'completed-form', data: any) {
+export async function sendFormEmail(type: 'guest-form' | 'completed-form', data: EmailParams) {
   try {
     const messageId = generateMessageId();
     const commonEmailParams = {
@@ -45,12 +45,8 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
     if (type === 'guest-form') {
       const templateParams: EmailParams = {
         ...commonEmailParams,
-        to_name: data.guestName,
-        to_email: data.guestEmail,
+        ...data,
         subject: `Golf Cart Inspection Form - ${data.property}`,
-        property: data.property,
-        inspection_date: data.inspectionDate,
-        form_link: data.formLink,
         reply_to: 'support@email.golfcartinspection.app'
       };
 
@@ -81,14 +77,8 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
       // Enviar al huésped
       const guestParams: EmailParams = {
         ...commonEmailParams,
-        to_name: data.guestName,
-        to_email: data.guestEmail,
+        ...data,
         subject: `Your Golf Cart Inspection - ${data.property}`,
-        property: data.property,
-        cart_type: data.inspectionData?.cartType || '',
-        cart_number: data.inspectionData?.cartNumber || '',
-        observations: data.inspectionData?.observations || 'No observations',
-        pdf_attachment: data.pdf_attachment, // Usar el enlace del PDF de Supabase
         reply_to: 'support@email.golfcartinspection.app'
       };
 

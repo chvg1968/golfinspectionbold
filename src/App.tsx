@@ -206,7 +206,7 @@ function InspectionForm() {
                 points: history[currentStep] || []
               },
               status: 'pending',
-              pdf_attachment: pdfUrl,
+              pdf_url: pdfUrl,
             }
           ])
           .select()
@@ -218,6 +218,8 @@ function InspectionForm() {
         await sendFormEmail('guest-form', {
           to_email: formData.guestEmail,
           to_name: formData.guestName,
+          from_name: 'Golf Cart Inspection System',
+          from_email: 'no-reply@email.golfcartinspection.app',
           property: formData.property,
           cart_type: formData.cartType,
           cart_number: formData.cartNumber,
@@ -273,7 +275,7 @@ function InspectionForm() {
             signature_data: signaturePadRef.current?.toDataURL(),
             status: 'completed',
             completed_at: new Date().toISOString(),
-            pdf_attachment: pdfUrl
+            pdf_url: pdfUrl
           })
           .eq('id', id);
 
@@ -297,6 +299,8 @@ function InspectionForm() {
         await sendFormEmail('completed-form', {
           to_email: formData.guestEmail,
           to_name: formData.guestName,
+          from_name: 'Golf Cart Inspection System',
+          from_email: 'no-reply@email.golfcartinspection.app',
           property: formData.property,
           cart_type: formData.cartType,
           cart_number: formData.cartNumber,
