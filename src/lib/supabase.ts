@@ -32,18 +32,7 @@ export async function uploadPDF(blob: Blob, filename: string): Promise<string | 
     // Sanitizar nombre de archivo
     const safeFileName = sanitizeFileName(filename);
     
-    // Verificar que el bucket existe
-    const { data: buckets } = await supabase
-      .storage
-      .listBuckets();
-
-    const pdfBucket = buckets?.find(b => b.name === 'pdfs');
-    if (!pdfBucket) {
-      console.error('PDF bucket not found');
-      throw new Error('Storage bucket not configured');
-    }
-
-    // Subir archivo
+    // Intentar subir directamente al bucket pdfs
     const { error: uploadError } = await supabase
       .storage
       .from('pdfs')
@@ -55,7 +44,7 @@ export async function uploadPDF(blob: Blob, filename: string): Promise<string | 
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
-      throw uploadError;
+      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
     }
 
     // Obtener URL pública
