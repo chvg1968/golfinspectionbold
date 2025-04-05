@@ -20,8 +20,8 @@ const COLOR_OPTIONS = [
 ];
 
 const POINT_SIZE = 8;
-const MAX_CANVAS_WIDTH = 1200; // Máximo ancho permitido
-const MAX_CANVAS_HEIGHT = 800; // Máximo alto permitido
+const MAX_CANVAS_WIDTH = 1200; // Maximum allowed width
+const MAX_CANVAS_HEIGHT = 800; // Maximum allowed height
 
 export function DiagramCanvas({
   isGuestView,
@@ -123,7 +123,7 @@ export function DiagramCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Mantener el tamaño del canvas sincronizado con el fondo
+    // Keep canvas size synchronized with background
     if (canvas.width !== backgroundCanvasRef.current.width || 
         canvas.height !== backgroundCanvasRef.current.height) {
       canvas.width = backgroundCanvasRef.current.width;

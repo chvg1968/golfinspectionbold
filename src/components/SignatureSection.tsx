@@ -45,7 +45,7 @@ export function SignatureSection({
       <h2 className="text-xl font-semibold text-gray-700">Terms and Signature</h2>
       
       <div className="space-y-6">
-        {/* Observations - Siempre habilitado */}
+        {/* Observations - Always enabled */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
             {isGuestView ? 'Observations' : 'Notes for the Guest'}
