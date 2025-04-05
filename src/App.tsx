@@ -205,8 +205,7 @@ function InspectionForm() {
               diagram_data: {
                 points: history[currentStep] || []
               },
-              status: 'pending',
-              pdf_url: pdfUrl,
+              status: 'pending'
             }
           ])
           .select()
@@ -274,8 +273,7 @@ function InspectionForm() {
             observations: formData.observations,
             signature_data: signaturePadRef.current?.toDataURL(),
             status: 'completed',
-            completed_at: new Date().toISOString(),
-            pdf_url: pdfUrl
+            completed_at: new Date().toISOString()
           })
           .eq('id', id);
 
