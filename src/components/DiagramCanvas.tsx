@@ -14,9 +14,9 @@ interface DiagramCanvasProps {
 }
 
 const COLOR_OPTIONS = [
-  { color: 'red', label: 'Rayones' },
-  { color: '#00FF7F', label: 'Partes faltantes' },
-  { color: '#BF40BF', label: 'Daños/Golpes' }
+  { color: 'red', label: 'Scratches' },
+  { color: '#00FF7F', label: 'Missing Parts' },
+  { color: '#BF40BF', label: 'Damage/Dents' }
 ];
 
 const POINT_SIZE = 8;
@@ -92,6 +92,16 @@ export function DiagramCanvas({
       
       // Draw image at full canvas size
       ctx.drawImage(img, 0, 0, canvasWidth, canvasHeight);
+
+      // Synchronize drawing canvas size and copy background
+      if (canvasRef.current) {
+        const drawingCtx = canvasRef.current.getContext('2d');
+        if (drawingCtx) {
+          canvasRef.current.width = canvasWidth;
+          canvasRef.current.height = canvasHeight;
+          drawingCtx.drawImage(canvas, 0, 0);
+        }
+      }
     };
 
     img.src = imageUrl;
@@ -105,20 +115,29 @@ export function DiagramCanvas({
     ctx.closePath();
   };
 
-  // Redraw all points
+  // Redraw all points and background
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !backgroundCanvasRef.current) return;
     
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = backgroundCanvasRef.current?.width || MAX_CANVAS_WIDTH;
-    canvas.height = backgroundCanvasRef.current?.height || MAX_CANVAS_HEIGHT;
+    // Mantener el tamaño del canvas sincronizado con el fondo
+    if (canvas.width !== backgroundCanvasRef.current.width || 
+        canvas.height !== backgroundCanvasRef.current.height) {
+      canvas.width = backgroundCanvasRef.current.width;
+      canvas.height = backgroundCanvasRef.current.height;
+    }
 
+    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw background image first
+    ctx.drawImage(backgroundCanvasRef.current, 0, 0);
+
+    // Then draw all points
     const currentPoints = history[currentStep] || [];
-    
     currentPoints.forEach(point => {
       drawPoint(ctx, point.x, point.y, point.color, point.size);
     });

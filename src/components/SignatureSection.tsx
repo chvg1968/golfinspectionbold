@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import SignaturePad from 'react-signature-canvas';
 import { Eraser } from 'lucide-react';
+import { PassiveSignaturePad } from './PassiveSignaturePad';
 
 interface SignatureSectionProps {
   isGuestView: boolean;
@@ -74,8 +75,8 @@ export function SignatureSection({
             Signature
           </label>
           <div className="border border-gray-300 rounded-lg bg-white">
-            <SignaturePad
-              ref={signaturePadRef}
+            <PassiveSignaturePad
+              signaturePadRef={signaturePadRef}
               canvasProps={{
                 className: 'signature-canvas w-full rounded-lg',
                 style: {
