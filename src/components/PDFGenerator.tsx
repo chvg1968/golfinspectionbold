@@ -24,13 +24,15 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     buttons.forEach(button => button.style.display = 'none');
 
     const canvas = await html2canvas(contentRef.current, {
-      scale: 1.0, // Reducir escala para disminuir tamaño
+      scale: 0.8, // Reducir escala para disminuir tamaño
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
       imageTimeout: 0,
       allowTaint: true,
-      removeContainer: true
+      removeContainer: true,
+      width: contentRef.current.offsetWidth * 0.8,
+      height: contentRef.current.offsetHeight * 0.8
     });
 
     // Restaurar los botones
@@ -81,8 +83,8 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     };
 
     const [downloadVersion, emailVersion] = await Promise.all([
-      generatePDF(0.9), // Alta calidad para descarga
-      generatePDF(0.3)  // Calidad muy reducida para email
+      generatePDF(0.7), // Calidad media-alta para descarga
+      generatePDF(0.2)  // Calidad muy reducida para email
     ]);
 
     return {

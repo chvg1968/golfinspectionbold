@@ -20,8 +20,8 @@ const COLOR_OPTIONS = [
 ];
 
 const POINT_SIZE = 8;
-const MAX_CANVAS_WIDTH = 1200; // Maximum allowed width
-const MAX_CANVAS_HEIGHT = 800; // Maximum allowed height
+const MAX_CANVAS_WIDTH = 800; // Maximum allowed width (reduced for PDF optimization)
+const MAX_CANVAS_HEIGHT = 600; // Maximum allowed height (reduced for PDF optimization)
 
 export function DiagramCanvas({
   isGuestView,
