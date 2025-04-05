@@ -7,7 +7,15 @@ interface PDFGeneratorProps {
   contentRef: React.RefObject<HTMLDivElement>;
 }
 
-export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promise<{ blob: Blob; base64: string } | null> {
+interface PDFVersion {
+  blob: Blob;
+  base64: string;
+}
+
+export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promise<{ 
+  download: PDFVersion; 
+  email: PDFVersion;
+} | null> {
   if (!contentRef.current) return null;
   
   try {
@@ -16,7 +24,7 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     buttons.forEach(button => button.style.display = 'none');
 
     const canvas = await html2canvas(contentRef.current, {
-      scale: 1.5, // Reducido para disminuir el tamaño del archivo
+      scale: 1.5,
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
@@ -28,46 +36,63 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     // Restaurar los botones
     buttons.forEach(button => button.style.display = '');
 
-    // Comprimir la imagen antes de añadirla al PDF
-    const imgData = canvas.toDataURL('image/jpeg', 0.7);
-    
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'px',
-      format: 'a4',
-      compress: true,
-      hotfixes: ['px_scaling']
-    });
+    // Función para generar PDF con calidad configurable
+    const generatePDF = async (quality: number): Promise<PDFVersion> => {
+      const imgData = canvas.toDataURL('image/jpeg', quality);
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4',
+        compress: true,
+        hotfixes: ['px_scaling']
+      });
 
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-    const widthRatio = pageWidth / canvas.width;
-    const heightRatio = pageHeight / canvas.height;
-    const ratio = Math.min(widthRatio, heightRatio);
+      const widthRatio = pageWidth / canvas.width;
+      const heightRatio = pageHeight / canvas.height;
+      const ratio = Math.min(widthRatio, heightRatio);
 
-    const canvasWidth = canvas.width * ratio;
-    const canvasHeight = canvas.height * ratio;
+      const canvasWidth = canvas.width * ratio;
+      const canvasHeight = canvas.height * ratio;
 
-    const marginX = (pageWidth - canvasWidth) / 2;
-    const marginY = (pageHeight - canvasHeight) / 2;
+      const marginX = (pageWidth - canvasWidth) / 2;
+      const marginY = (pageHeight - canvasHeight) / 2;
 
-    pdf.addImage(imgData, 'JPEG', marginX, marginY, canvasWidth, canvasHeight, undefined, 'FAST');
-    
-    const blob = pdf.output('blob');
-    const base64 = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        resolve(base64String.split(',')[1]);
-      };
-      reader.readAsDataURL(blob);
-    });
+      pdf.addImage(imgData, 'JPEG', marginX, marginY, canvasWidth, canvasHeight, undefined, 'FAST');
+      
+      const blob = pdf.output('blob');
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (!reader.result) {
+            reject(new Error('Failed to read PDF data'));
+            return;
+          }
+          const base64String = reader.result as string;
+          resolve(base64String.split(',')[1]);
+        };
+        reader.onerror = () => reject(new Error('Failed to read PDF blob'));
+        reader.readAsDataURL(blob);
+      });
 
-    return { blob, base64 };
-  } catch (error) {
+      return { blob, base64 };
+    };
+
+    const [downloadVersion, emailVersion] = await Promise.all([
+      generatePDF(0.9), // Alta calidad para descarga
+      generatePDF(0.5)  // Baja calidad para email
+    ]);
+
+    return {
+      download: downloadVersion,
+      email: emailVersion
+    };
+
+  } catch (error: unknown) {
     console.error('Error generating PDF:', error);
-    throw new Error('Failed to generate PDF');
+    throw new Error('Failed to generate PDF: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
 
