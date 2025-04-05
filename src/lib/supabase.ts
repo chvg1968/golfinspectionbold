@@ -7,10 +7,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function getCartDiagramUrl(filename: string): Promise<string | null> {
   try {
+    // Asegurar que el filename tenga la extensión .png
+    const filenameWithExt = filename.endsWith('.png') ? filename : `${filename}.png`;
+    
     const { data } = supabase
       .storage
       .from('diagrams')
-      .getPublicUrl(filename);
+      .getPublicUrl(filenameWithExt);
 
     return data.publicUrl;
   } catch (error) {
