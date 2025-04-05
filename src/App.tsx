@@ -190,23 +190,7 @@ function InspectionForm() {
       }
 
       if (!isGuestView) {
-        // Verificar si ya existe una inspección pendiente para este invitado y propiedad
-        const { data: existingInspections } = await supabase
-          .from('inspections')
-          .select()
-          .eq('guest_email', formData.guestEmail)
-          .eq('property', formData.property)
-          .eq('status', 'pending');
-
-        if (existingInspections && existingInspections.length > 0) {
-          const confirmContinue = window.confirm(
-            'Ya existe una inspección pendiente para este invitado y propiedad. ¿Desea crear una nueva de todos modos?'
-          );
-          if (!confirmContinue) {
-            setIsSending(false);
-            return;
-          }
-        }
+        // Crear nueva inspección sin confirmación
 
         // Crear nueva inspección
         const { data: inspection, error } = await supabase

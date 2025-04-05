@@ -104,10 +104,31 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     // Clonar contenido
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
     
-    // Convertir todos los inputs y selects a texto plano para el PDF
-    const inputs = contentClone.getElementsByTagName('input');
-    Array.from(inputs).forEach(input => {
-      if (input.type === 'text') {
+    // Convertir todos los campos a texto plano para el PDF
+    const propertyInputs = contentClone.querySelectorAll('input[name="property"]');
+    const propertySelects = contentClone.querySelectorAll('select[name="property"]');
+
+    // Procesar inputs de property
+    propertyInputs.forEach(input => {
+      const span = document.createElement('span');
+      span.textContent = (input as HTMLInputElement).value;
+      span.style.cssText = 'font-size: 14px; color: #374151;';
+      input.parentNode?.replaceChild(span, input);
+    });
+
+    // Procesar selects de property
+    propertySelects.forEach(select => {
+      const selectElement = select as HTMLSelectElement;
+      const span = document.createElement('span');
+      span.textContent = selectElement.options[selectElement.selectedIndex]?.text || selectElement.value;
+      span.style.cssText = 'font-size: 14px; color: #374151;';
+      select.parentNode?.replaceChild(span, select);
+    });
+
+    // Convertir otros inputs de texto
+    const otherInputs = contentClone.getElementsByTagName('input');
+    Array.from(otherInputs).forEach(input => {
+      if (input.type === 'text' && input.name !== 'property') {
         const span = document.createElement('span');
         span.textContent = input.value;
         span.style.cssText = 'font-size: 14px; color: #374151;';
@@ -115,13 +136,15 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
       }
     });
 
-    // Convertir todos los selects a texto plano
-    const selects = contentClone.getElementsByTagName('select');
-    Array.from(selects).forEach(select => {
-      const span = document.createElement('span');
-      span.textContent = select.options[select.selectedIndex]?.text || select.value;
-      span.style.cssText = 'font-size: 14px; color: #374151;';
-      select.parentNode?.replaceChild(span, select);
+    // Convertir otros selects
+    const otherSelects = contentClone.getElementsByTagName('select');
+    Array.from(otherSelects).forEach(select => {
+      if (select.name !== 'property') {
+        const span = document.createElement('span');
+        span.textContent = select.options[select.selectedIndex]?.text || select.value;
+        span.style.cssText = 'font-size: 14px; color: #374151;';
+        select.parentNode?.replaceChild(span, select);
+      }
     });
     
     // Copiar canvas
