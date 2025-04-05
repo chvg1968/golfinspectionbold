@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emailjs/browser": "^4.3.3",
+    "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "^2.39.7",
     "date-fns": "^3.3.1",
     "html2canvas": "^1.4.1",

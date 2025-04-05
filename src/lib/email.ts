@@ -1,5 +1,10 @@
 import emailjs from '@emailjs/browser';
 
+// Initialize EmailJS
+emailjs.init({
+  publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+});
+
 const EMAILJS_SERVICE_ID = 'service_7h35thn';
 const EMAILJS_TEMPLATE_ID_GUEST = 'template_nua7xlj';
 const EMAILJS_TEMPLATE_ID_COMPLETED = 'template_uvyqe6a';
@@ -30,6 +35,7 @@ function generateMessageId(): string {
 
 export async function sendFormEmail(type: 'guest-form' | 'completed-form', data: EmailParams) {
   try {
+    console.log('Iniciando envío de email...', { type, serviceId: EMAILJS_SERVICE_ID, templateId: type === 'guest-form' ? EMAILJS_TEMPLATE_ID_GUEST : EMAILJS_TEMPLATE_ID_COMPLETED });
     const messageId = generateMessageId();
     const commonEmailParams = {
       from_name: 'Golf Cart Inspection System',
@@ -102,8 +108,10 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         EMAILJS_PUBLIC_KEY
       );
 
+      console.log('Respuesta del envío:', guestResponse);
       if (guestResponse.status !== 200) {
-        throw new Error(`Error sending email to guest: ${guestResponse.text}`);
+        console.error('Error en la respuesta:', guestResponse);
+        throw new Error(`Error sending email to guest: ${guestResponse.text || 'Unknown error'}`);
       }
 
       // Enviar al administrador
@@ -113,11 +121,11 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', data:
         to_email: 'hernancalendar01@gmail.com',
         subject: `Completed Inspection Form - ${data.property}`,
         property: data.property,
-        cart_type: data.inspectionData?.cartType || '',
-        cart_number: data.inspectionData?.cartNumber || '',
-        observations: data.inspectionData?.observations || 'No observations',
+        cart_type: data.cart_type || '',
+        cart_number: data.cart_number || '',
+        observations: data.observations || 'No observations',
         pdf_attachment: data.pdf_attachment, // Usar el enlace del PDF de Supabase
-        reply_to: data.guestEmail
+        reply_to: data.to_email
       };
 
       const adminResponse = await emailjs.send(
