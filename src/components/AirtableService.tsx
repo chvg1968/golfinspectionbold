@@ -1,3 +1,5 @@
+import { generateFormId } from '../lib/generate-form-id';
+
 /**
  * Servicio para enviar datos a Airtable
  */
@@ -39,7 +41,7 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         }
 
         const fields: AirtableFields = {
-            'Form Id': formData.formId || crypto.randomUUID(),
+            'Form Id': formData.formId || generateFormId(formData.guestName),
             'Inspection Date': formData.inspectionDate,
             'Guest Name': formData.guestName,
             'Property': formData.property,
