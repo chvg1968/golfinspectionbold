@@ -35,7 +35,25 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
     await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que todo esté renderizado
 
-    const canvas = await html2canvas(contentRef.current, {
+    // Crear un contenedor temporal para el PDF
+    const tempContainer = document.createElement('div');
+    tempContainer.style.backgroundColor = '#ffffff';
+    tempContainer.style.padding = '20px';
+
+    // Agregar el encabezado
+    const header = document.createElement('div');
+    header.style.textAlign = 'center';
+    header.style.marginBottom = '20px';
+    header.innerHTML = `
+      <img src="/diagrams/logo.png" style="height: 100px; margin-bottom: 10px;" />
+      <h1 style="font-size: 24px; font-weight: bold; color: #1f2937;">Golf Cart Inspection</h1>
+    `;
+    tempContainer.appendChild(header);
+
+    // Agregar el contenido del formulario
+    tempContainer.appendChild(contentRef.current.cloneNode(true));
+
+    const canvas = await html2canvas(tempContainer, {
       scale: 2.0, // Aumentar escala para mejor calidad
       useCORS: true,
       logging: false,

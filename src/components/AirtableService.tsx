@@ -19,19 +19,19 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
     });
     try {
         interface AirtableFields {
-            'Form Id': string;
-            'Guest Name': string;
+            'Form_Id': string;
+            'Guest_Name': string;
             'Property': string;
-            'Inspection Date': string;
-            'PDF URL': string;
+            'Inspection_Date': string;
+            'PDF_Link': string;
         }
 
         const fields: AirtableFields = {
-            'Form Id': formData.formId || crypto.randomUUID(),
-            'Inspection Date': formData.inspectionDate,
-            'Guest Name': formData.guestName,
+            'Form_Id': formData.formId || crypto.randomUUID(),
+            'Inspection_Date': formData.inspectionDate,
+            'Guest_Name': formData.guestName,
             'Property': formData.property,
-            'PDF URL': pdfLink
+            'PDF_Link': pdfLink
         };
 
         const airtableData = { fields };
