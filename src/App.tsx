@@ -10,13 +10,8 @@ import { DiagramCanvas } from './components/DiagramCanvas';
 import { SignatureSection } from './components/SignatureSection';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { ThankYou } from './components/ThankYou';
-<<<<<<< HEAD
 import { sendFormEmail } from './lib/email';
 import { generateFormPDF } from './components/PDFGenerator';
-=======
-import { sendFormEmail, EmailButton } from './components/EmailService';
-import { generateFormPDF, PDFButton } from './components/PDFGenerator';
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
 interface FormData {
   guestName: string;
@@ -55,13 +50,8 @@ function InspectionForm() {
   const formContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-<<<<<<< HEAD
     setIsGuestView(!!id);
     if (id) {
-=======
-    if (id) {
-      setIsGuestView(true);
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
       loadInspection(id);
     }
   }, [id]);
@@ -108,11 +98,7 @@ function InspectionForm() {
       }
     } catch (error) {
       console.error('Error loading inspection:', error);
-<<<<<<< HEAD
       alert('Error loading inspection. Please try again.');
-=======
-      alert('Error loading the inspection. Please try again.');
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -196,7 +182,6 @@ function InspectionForm() {
 
         if (updateError) throw updateError;
 
-<<<<<<< HEAD
         const pdfData = await generateFormPDF({ contentRef: formContentRef });
         if (!pdfData) throw new Error('Error generating PDF');
 
@@ -225,39 +210,6 @@ function InspectionForm() {
 
         alert('Form submitted successfully!');
         navigate('/thank-you');
-=======
-        const pdfBlob = await generateFormPDF({ contentRef: formContentRef });
-        if (!pdfBlob) throw new Error('Error generating PDF');
-
-        const reader = new FileReader();
-        const base64Promise = new Promise((resolve) => {
-          reader.onloadend = () => resolve(reader.result);
-        });
-        reader.readAsDataURL(pdfBlob);
-        const pdfBase64 = (await base64Promise as string).split(',')[1];
-
-        await sendFormEmail({
-          type: 'completed-form',
-          data: {
-            guestName: formData.guestName,
-            guestEmail: formData.guestEmail,
-            property: formData.property,
-            inspectionData: {
-              observations: formData.observations,
-              cartType: formData.cartType,
-              cartNumber: formData.cartNumber,
-            },
-            pdfBase64,
-          },
-          onSuccess: () => {
-            alert('Form submitted successfully!');
-            navigate('/thank-you');
-          },
-          onError: (error) => {
-            throw error;
-          },
-        });
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
       } else {
         const { data: inspection, error: insertError } = await supabase
           .from('inspections')
@@ -285,7 +237,6 @@ function InspectionForm() {
 
         const shareableLink = `${window.location.origin}/inspection/${inspection.id}`;
         
-<<<<<<< HEAD
         await sendFormEmail('guest-form', {
           guestName: formData.guestName,
           guestEmail: formData.guestEmail,
@@ -308,37 +259,6 @@ function InspectionForm() {
         setSelectedProperty(null);
         setHistory([[]]);
         setCurrentStep(0);
-=======
-        await sendFormEmail({
-          type: 'guest-form',
-          data: {
-            guestName: formData.guestName,
-            guestEmail: formData.guestEmail,
-            property: formData.property,
-            inspectionDate: formData.inspectionDate,
-            formLink: shareableLink,
-          },
-          onSuccess: () => {
-            alert('Form link sent successfully to the guest!');
-            setFormData({
-              guestName: '',
-              guestEmail: '',
-              guestPhone: '',
-              inspectionDate: format(new Date(), 'yyyy-MM-dd'),
-              property: '',
-              cartType: '',
-              cartNumber: '',
-              observations: '',
-            });
-            setSelectedProperty(null);
-            setHistory([[]]);
-            setCurrentStep(0);
-          },
-          onError: (error) => {
-            throw error;
-          },
-        });
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -392,7 +312,6 @@ function InspectionForm() {
             />
 
             <div className="flex justify-end space-x-4">
-<<<<<<< HEAD
               <button
                 type="submit"
                 disabled={isSending}
@@ -400,13 +319,6 @@ function InspectionForm() {
               >
                 {isSending ? 'Processing...' : (isGuestView ? 'Sign and Download PDF' : 'Send to Guest')}
               </button>
-=======
-              {isGuestView ? (
-                <PDFButton isSending={isSending} />
-              ) : (
-                <EmailButton isGuestView={isGuestView} isSending={isSending} />
-              )}
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
             </div>
           </form>
         </div>
