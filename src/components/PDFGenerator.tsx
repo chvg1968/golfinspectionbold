@@ -36,7 +36,7 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     await new Promise(resolve => setTimeout(resolve, 500)); // Esperar que todo esté renderizado
 
     const canvas = await html2canvas(contentRef.current, {
-      scale: 1.0,
+      scale: 2.0, // Aumentar escala para mejor calidad
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
@@ -49,6 +49,8 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
           canvas.style.display = 'block';
           canvas.style.width = '100%';
           canvas.style.height = 'auto';
+          // Preservar la calidad del canvas
+          canvas.style.imageRendering = 'high-quality';
         });
       }
     });
