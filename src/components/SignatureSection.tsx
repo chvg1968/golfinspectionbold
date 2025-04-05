@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 import React, { useEffect, useRef } from 'react';
 import SignaturePad from 'react-signature-canvas';
 import { Eraser } from 'lucide-react';
-=======
-import React from 'react';
-import SignaturePad from 'react-signature-canvas';
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 
 interface SignatureSectionProps {
   isGuestView: boolean;
@@ -22,7 +17,6 @@ export function SignatureSection({
   signaturePadRef,
   onClearSignature,
 }: SignatureSectionProps) {
-<<<<<<< HEAD
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -55,21 +49,12 @@ export function SignatureSection({
           <label className="block text-sm font-medium text-gray-700">
             {isGuestView ? 'Observations' : 'Notes for the Guest'}
           </label>
-=======
-  return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-700">Terms and Signature</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Observations</label>
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
           <textarea
             name="observations"
             value={observations}
             onChange={onObservationsChange}
             rows={4}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-<<<<<<< HEAD
             placeholder={isGuestView ? 'Enter any observations about the cart condition...' : 'Add any notes for the guest...'}
           />
         </div>
@@ -113,37 +98,6 @@ export function SignatureSection({
             Clear Signature
           </button>
         </div>
-=======
-          />
-        </div>
-        {isGuestView && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Signature</label>
-            <div className="border border-gray-300 rounded-lg bg-white">
-              <SignaturePad
-                ref={signaturePadRef}
-                canvasProps={{
-                  className: 'signature-canvas',
-                  style: {
-                    width: '100%',
-                    height: '160px',
-                    maxWidth: '100%',
-                    minHeight: '160px',
-                    backgroundColor: 'white'
-                  }
-                }}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={onClearSignature}
-              className="mt-2 px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300"
-            >
-              Clear Signature
-            </button>
-          </div>
-        )}
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
       </div>
     </section>
   );
