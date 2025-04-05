@@ -5,10 +5,6 @@ export default {
     extend: {},
   },
   plugins: [
-<<<<<<< HEAD
-    '@tailwindcss/forms',
-=======
     require('@tailwindcss/forms'),
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
   ],
 };
