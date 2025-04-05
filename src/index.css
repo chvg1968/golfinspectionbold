@@ -4,7 +4,6 @@
 
 .signature-canvas {
   touch-action: none;
-<<<<<<< HEAD
 }
 
 /* Ocultar botones durante la impresión */
@@ -12,6 +11,4 @@
   button {
     display: none !important;
   }
-=======
->>>>>>> f0b21650ba5eb0efc04b5981ca6969c441ed5566
 }
