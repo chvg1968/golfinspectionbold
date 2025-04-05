@@ -190,6 +190,24 @@ function InspectionForm() {
       }
 
       if (!isGuestView) {
+        // Verificar si ya existe una inspección pendiente para este invitado y propiedad
+        const { data: existingInspections } = await supabase
+          .from('inspections')
+          .select()
+          .eq('guest_email', formData.guestEmail)
+          .eq('property', formData.property)
+          .eq('status', 'pending');
+
+        if (existingInspections && existingInspections.length > 0) {
+          const confirmContinue = window.confirm(
+            'Ya existe una inspección pendiente para este invitado y propiedad. ¿Desea crear una nueva de todos modos?'
+          );
+          if (!confirmContinue) {
+            setIsSending(false);
+            return;
+          }
+        }
+
         // Crear nueva inspección
         const { data: inspection, error } = await supabase
           .from('inspections')
@@ -227,23 +245,8 @@ function InspectionForm() {
           pdf_attachment: pdfUrl
         });
 
-        // Enviar datos a Airtable
-        if (pdfUrl) {
-          try {
-            await sendToAirtable({
-              guestName: formData.guestName,
-              inspectionDate: formData.inspectionDate,
-              property: formData.property,
-              formId: crypto.randomUUID()
-            }, pdfUrl);
-            console.log('Datos enviados exitosamente a Airtable');
-          } catch (airtableError) {
-            console.error('Error al enviar datos a Airtable:', airtableError);
-            // No lanzamos el error para no interrumpir el flujo principal
-          }
-        } else {
-          console.error('No se pudo enviar a Airtable: URL del PDF no disponible');
-        }
+        // Solo enviar a Airtable si es una nueva inspección
+        // El envío real se hará cuando el guest firme
 
         // Descargar versión local
         try {
@@ -279,18 +282,22 @@ function InspectionForm() {
 
         if (error) throw error;
 
-        // Actualizar en Airtable
-        try {
-          await sendToAirtable({
-            guestName: formData.guestName,
-            inspectionDate: formData.inspectionDate,
-            property: formData.property,
-            formId: id
-          }, pdfUrl);
-          console.log('Datos actualizados exitosamente en Airtable');
-        } catch (airtableError) {
-          console.error('Error al actualizar datos en Airtable:', airtableError);
-          // No lanzamos el error para no interrumpir el flujo principal
+        // Enviar a Airtable cuando el guest firma
+        if (pdfUrl) {
+          try {
+            await sendToAirtable({
+              guestName: formData.guestName,
+              inspectionDate: formData.inspectionDate,
+              property: formData.property,
+              formId: id
+            }, pdfUrl);
+            console.log('Datos enviados exitosamente a Airtable');
+          } catch (airtableError) {
+            console.error('Error al enviar datos a Airtable:', airtableError);
+            // No lanzamos el error para no interrumpir el flujo principal
+          }
+        } else {
+          console.error('No se pudo enviar a Airtable: URL del PDF no disponible');
         }
 
         // Enviar email de confirmación

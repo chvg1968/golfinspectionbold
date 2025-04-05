@@ -21,29 +21,38 @@ const generatePDFVersion = async (canvas: HTMLCanvasElement, quality: number): P
   const imgData = canvas.toDataURL('image/jpeg', quality);
   const pdf = new jsPDF({
     orientation: 'portrait',
-    unit: 'px',
+    unit: 'mm',
     format: 'a4',
     compress: true,
     hotfixes: ['px_scaling'],
     putOnlyUsedFonts: true
   });
   
-  pdf.setFontSize(12);
+  pdf.setFontSize(14);
 
+  // Convertir las dimensiones de px a mm
+  const pxToMm = 0.264583;
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  const widthRatio = pageWidth / canvas.width;
-  const heightRatio = pageHeight / canvas.height;
-  const ratio = Math.min(widthRatio, heightRatio);
+  // Calcular el ancho máximo disponible en mm (dejando márgenes)
+  const maxWidth = pageWidth - 20; // 10mm de margen a cada lado
+  const maxHeight = pageHeight - 20; // 10mm de margen arriba y abajo
 
-  const canvasWidth = canvas.width * ratio;
-  const canvasHeight = canvas.height * ratio;
+  // Calcular la escala para ajustar el contenido al ancho y alto disponibles
+  const widthScale = maxWidth / (canvas.width * pxToMm);
+  const heightScale = maxHeight / (canvas.height * pxToMm);
+  const scale = Math.min(widthScale, heightScale);
 
-  const marginX = (pageWidth - canvasWidth) / 2;
-  const marginY = (pageHeight - canvasHeight) / 2;
+  // Calcular las dimensiones finales en mm
+  const finalWidth = canvas.width * pxToMm * scale;
+  const finalHeight = canvas.height * pxToMm * scale;
 
-  pdf.addImage(imgData, 'JPEG', marginX, marginY, canvasWidth, canvasHeight, undefined, 'FAST');
+  // Centrar en la página
+  const marginX = (pageWidth - finalWidth) / 2;
+  const marginY = (pageHeight - finalHeight) / 2;
+
+  pdf.addImage(imgData, 'JPEG', marginX, marginY, finalWidth, finalHeight, undefined, 'FAST');
   
   const blob = pdf.output('blob');
   const base64 = await new Promise<string>((resolve, reject) => {
@@ -78,22 +87,44 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
     // Crear contenedor temporal
     tempContainer = document.createElement('div');
-    tempContainer.style.cssText = 'background-color: #ffffff; padding: 10px;';
+    tempContainer.style.cssText = 'background-color: #ffffff; padding: 15px; width: 800px; margin: 0 auto; font-size: 14px;';
     document.body.appendChild(tempContainer);
 
     // Agregar encabezado
     const header = document.createElement('div');
-    header.style.cssText = 'text-align: center; margin-bottom: 15px; width: 100%;';
+    header.style.cssText = 'text-align: center; margin-bottom: 20px; width: 100%;';
     header.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-        <img src="/diagrams/logo.png" style="height: 120px; object-fit: contain;" />
-        <h1 style="font-size: 28px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
+        <img src="/diagrams/logo.png" style="height: 140px; object-fit: contain; margin-bottom: 10px;" />
+        <h1 style="font-size: 32px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
       </div>
     `;
     tempContainer.appendChild(header);
 
     // Clonar contenido
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
+    
+    // Reemplazar inputs de solo lectura por texto plano
+    const inputs = contentClone.getElementsByTagName('input');
+    Array.from(inputs).forEach(input => {
+      if (input.readOnly) {
+        const span = document.createElement('span');
+        span.textContent = input.value;
+        span.style.cssText = 'font-size: 14px; color: #374151;';
+        input.parentNode?.replaceChild(span, input);
+      }
+    });
+
+    // Reemplazar selects de solo lectura por texto plano
+    const selects = contentClone.getElementsByTagName('select');
+    Array.from(selects).forEach(select => {
+      if (select.disabled) {
+        const span = document.createElement('span');
+        span.textContent = select.options[select.selectedIndex]?.text || select.value;
+        span.style.cssText = 'font-size: 14px; color: #374151;';
+        select.parentNode?.replaceChild(span, select);
+      }
+    });
     
     // Copiar canvas
     const originalCanvases = contentRef.current.getElementsByTagName('canvas');
