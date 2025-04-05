@@ -13,11 +13,7 @@ interface GuestInformationProps {
 
 export function GuestInformation({ formData, isGuestView, onInputChange }: GuestInformationProps) {
   return (
-    <section className="space-y-6">
-      <div className="text-center mb-8">
-        <img src="/diagrams/logo.png" alt="Golf Cart Inspection Logo" className="mx-auto h-24 mb-4" />
-        <h1 className="text-3xl font-bold text-gray-800">Golf Cart Inspection</h1>
-      </div>
+    <section className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-700">Guest Information</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

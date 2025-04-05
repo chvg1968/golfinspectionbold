@@ -344,6 +344,7 @@ function InspectionForm() {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
         <div className="text-center mb-8">
+          <img src="/diagrams/logo.png" alt="Golf Cart Inspection Logo" className="mx-auto h-24 mb-4" />
           <h1 className="text-3xl font-bold text-gray-900">Golf Cart Inspection</h1>
           <p className="mt-2 text-sm text-gray-600">
             {isGuestView ? 'Please review and sign the inspection form' : 'Fill out the inspection details below'}
