@@ -13,8 +13,8 @@ const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 interface EmailParams {
   to_name: string;
   to_email: string;
-  from_name: string;
-  from_email: string;
+  from_name?: string;
+  from_email?: string;
   property: string;
   inspection_date?: string;
   form_link?: string;
@@ -22,12 +22,13 @@ interface EmailParams {
   cart_number?: string;
   observations?: string;
   pdf_attachment?: string;
+  pdf_url?: string;
   reply_to?: string;
   subject?: string;
   message_id?: string;
 }
 
-function generateMessageId(): string {
+export function generateMessageId(): string {
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `<${timestamp}.${random}@email.golfcartinspection.app>`;

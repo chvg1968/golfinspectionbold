@@ -21,6 +21,7 @@ export function GuestInformation({ formData, isGuestView, onInputChange }: Guest
           <input
             type="text"
             name="guestName"
+            title="Guest Name"
             value={formData.guestName}
             onChange={onInputChange}
             readOnly={isGuestView}
@@ -33,6 +34,7 @@ export function GuestInformation({ formData, isGuestView, onInputChange }: Guest
           <input
             type="tel"
             name="guestPhone"
+            title="Phone"
             value={formData.guestPhone}
             onChange={onInputChange}
             readOnly={isGuestView}
@@ -45,6 +47,7 @@ export function GuestInformation({ formData, isGuestView, onInputChange }: Guest
           <input
             type="email"
             name="guestEmail"
+            title="Email"
             value={formData.guestEmail}
             onChange={onInputChange}
             readOnly={isGuestView}
@@ -56,6 +59,7 @@ export function GuestInformation({ formData, isGuestView, onInputChange }: Guest
           <label className="block text-sm font-medium text-gray-700">Inspection Date</label>
           <input
             type="date"
+            title="Inspection Date"
             name="inspectionDate"
             value={formData.inspectionDate}
             onChange={onInputChange}

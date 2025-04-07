@@ -18,6 +18,7 @@ export interface DiagramData {
   points: Point[];
   width: number;
   height: number;
+  diagramType: string;
 }
 
 export interface Inspection {

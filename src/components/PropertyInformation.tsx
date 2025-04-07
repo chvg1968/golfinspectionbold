@@ -22,7 +22,7 @@ export function PropertyInformation({ formData, isGuestView, onPropertyChange }:
             <input
               type="text"
               name="property"
-              value={formData.property || 'Not selected'}
+              value={PROPERTIES.find(p => p.id === formData.property)?.name || 'Not selected'}
               readOnly
               aria-label="Property"
               title="Property"
@@ -40,7 +40,7 @@ export function PropertyInformation({ formData, isGuestView, onPropertyChange }:
             >
               <option value="">Select property</option>
               {PROPERTIES.map(property => (
-                <option key={property.id} value={property.name}>
+                <option key={property.id} value={property.id}>
                   {property.name}
                 </option>
               ))}

@@ -90,18 +90,7 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     tempContainer.style.cssText = 'background-color: #ffffff; padding: 15px; width: 800px; margin: 0 auto; font-size: 14px;';
     document.body.appendChild(tempContainer);
 
-    // Agregar encabezado
-    const header = document.createElement('div');
-    header.style.cssText = 'text-align: center; margin-bottom: 20px; width: 100%;';
-    header.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
-        <img src="/diagrams/logo.png" style="height: 140px; object-fit: contain; margin-bottom: 10px;" />
-        <h1 style="font-size: 32px; font-weight: bold; color: #1f2937; margin: 0;">Golf Cart Inspection</h1>
-      </div>
-    `;
-    tempContainer.appendChild(header);
-
-    // Clonar contenido
+    // Clonar contenido del formulario (incluye el header)
     const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
     
     // Convertir todos los campos a texto plano para el PDF
@@ -119,7 +108,6 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
     // Buscar el contenedor en el clon y reemplazar el contenido
     const propertyContainer = contentClone.querySelector('div:has(> [name="property"])');
     if (propertyContainer) {
-
       // Crear span con el valor de la propiedad
       const span = document.createElement('span');
       span.textContent = propertyValue;
@@ -127,6 +115,9 @@ export async function generateFormPDF({ contentRef }: PDFGeneratorProps): Promis
 
       // Limpiar el contenedor y agregar el span
       const label = propertyContainer.querySelector('label');
+      
+      // Agregar el contenido clonado al contenedor temporal
+      tempContainer.appendChild(contentClone);
       propertyContainer.innerHTML = '';
       if (label) propertyContainer.appendChild(label);
       propertyContainer.appendChild(span);
