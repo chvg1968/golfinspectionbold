@@ -1,10 +1,41 @@
-import { EmailData } from './types';
+import { EmailData, EmailContentParams } from './types.ts';
 
-export function getGuestFormEmailContent(data: EmailData) {
-  const { guestName, guestEmail, property, inspectionDate, formLink } = data;
+export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
+  const { 
+    guestName, 
+    guestEmail, 
+    property, 
+    inspectionDate, 
+    formLink, 
+    diagramPoints = [] 
+  } = data;
   
+  // Generar HTML para puntos del diagrama
+  const diagramPointsHtml = diagramPoints.length > 0 
+    ? `
+    <div style="margin: 20px 0; padding: 15px; background-color: #f0f4f8; border-radius: 5px;">
+      <h3 style="color: #2c5282; margin-bottom: 10px;">Diagram Marks</h3>
+      <ul style="list-style-type: none; padding: 0;">
+        ${diagramPoints.map(point => `
+          <li style="margin-bottom: 5px; display: flex; align-items: center;">
+            <span style="
+              display: inline-block; 
+              width: 10px; 
+              height: 10px; 
+              border-radius: 50%; 
+              background-color: ${point.color}; 
+              margin-right: 10px;
+            "></span>
+            Mark at (${Math.round(point.x)}, ${Math.round(point.y)})
+          </li>
+        `).join('')}
+      </ul>
+    </div>
+    `
+    : '';
+
   return {
-    from: 'Golf Cart Inspection <onboarding@resend.dev>',
+    from: 'Luxe Properties <noreply@luxepropertiespr.com>',
     to: [guestEmail],
     subject: `Golf Cart Inspection Form for ${property}`,
     html: `
@@ -12,6 +43,9 @@ export function getGuestFormEmailContent(data: EmailData) {
         <h2 style="color: #2c5282; margin-bottom: 20px;">Golf Cart Inspection Form</h2>
         <p style="margin-bottom: 15px;">Dear ${guestName},</p>
         <p style="margin-bottom: 20px;">An inspection form has been created for the golf cart at ${property}. Please complete this form at your earliest convenience.</p>
+        
+        ${diagramPointsHtml}
+        
         <div style="margin: 30px 0; text-align: center;">
           <a href="${formLink}" 
              style="background-color: #4CAF50; 
@@ -39,8 +73,8 @@ export function getGuestFormEmailContent(data: EmailData) {
   };
 }
 
-export function getCompletedFormEmailContent(data: EmailData, isAdmin = false) {
-  const { guestName, guestEmail, property, inspectionData, pdfBase64 } = data;
+export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): EmailContentParams {
+  const { guestName, guestEmail, property, pdfBase64, cartType, cartNumber, observations } = data;
   
   const filename = `inspection-form-${property.replace(/\s+/g, '-').toLowerCase()}.pdf`;
   const attachments = pdfBase64 ? [
@@ -52,7 +86,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false) {
 
   if (isAdmin) {
     return {
-      from: 'Golf Cart Inspection <onboarding@resend.dev>',
+      from: 'Luxe Properties <noreply@luxepropertiespr.com>',
       to: ['hernancalendar01@gmail.com'],
       reply_to: guestEmail,
       subject: `Completed Inspection Form - ${property}`,
@@ -64,9 +98,9 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false) {
             <p><strong>Guest Name:</strong> ${guestName}</p>
             <p><strong>Guest Email:</strong> ${guestEmail}</p>
             <p><strong>Property:</strong> ${property}</p>
-            <p><strong>Cart Type:</strong> ${inspectionData?.cartType}</p>
-            <p><strong>Cart Number:</strong> ${inspectionData?.cartNumber}</p>
-            <p><strong>Observations:</strong> ${inspectionData?.observations || 'No observations provided'}</p>
+            <p><strong>Cart Type:</strong> ${cartType}</p>
+            <p><strong>Cart Number:</strong> ${cartNumber}</p>
+            <p><strong>Observations:</strong> ${observations || 'No observations provided'}</p>
           </div>
           <p>Please find the completed inspection form attached.</p>
         </div>
@@ -76,7 +110,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false) {
   }
 
   return {
-    from: 'Golf Cart Inspection <onboarding@resend.dev>',
+    from: 'Luxe Properties <noreply@luxepropertiespr.com>',
     to: [guestEmail],
     subject: `Your Golf Cart Inspection Form - ${property}`,
     html: `
@@ -85,9 +119,9 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false) {
         <p>Thank you for completing the golf cart inspection form. Please find your copy attached.</p>
         <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
           <p><strong>Property:</strong> ${property}</p>
-          <p><strong>Cart Type:</strong> ${inspectionData?.cartType}</p>
-          <p><strong>Cart Number:</strong> ${inspectionData?.cartNumber}</p>
-          <p><strong>Observations:</strong> ${inspectionData?.observations || 'No observations provided'}</p>
+          <p><strong>Cart Type:</strong> ${cartType}</p>
+          <p><strong>Cart Number:</strong> ${cartNumber}</p>
+          <p><strong>Observations:</strong> ${observations || 'No observations provided'}</p>
         </div>
         <p>Please keep this email for your records.</p>
       </div>

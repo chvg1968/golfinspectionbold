@@ -1,6 +1,6 @@
 import React from 'react';
 import { Send } from 'lucide-react';
-import { sendEmail } from '../lib/email';
+import { sendFormEmail } from '../lib/email';
 
 interface EmailServiceProps {
   type: 'guest-form' | 'completed-form';
@@ -15,7 +15,7 @@ interface EmailServiceProps {
       cartType: string;
       cartNumber: string;
     };
-    pdfBase64?: string;
+    pdfUrl?: string;
   };
   onSuccess: () => void;
   onError: (error: Error) => void;
@@ -23,7 +23,19 @@ interface EmailServiceProps {
 
 export async function sendFormEmail({ type, data, onSuccess, onError }: EmailServiceProps) {
   try {
-    await sendEmail(type, data);
+    const emailData = {
+      to_name: data.guestName,
+      to_email: data.guestEmail,
+      property: data.property,
+      inspection_date: data.inspectionDate,
+      form_link: data.formLink,
+      cart_type: data.inspectionData?.cartType,
+      cart_number: data.inspectionData?.cartNumber,
+      observations: data.inspectionData?.observations,
+      pdf_url: data.pdfUrl
+    };
+
+    await sendFormEmail(type, emailData);
     onSuccess();
   } catch (error) {
     console.error('Error sending email:', error);

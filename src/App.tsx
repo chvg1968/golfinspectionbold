@@ -320,25 +320,57 @@ function InspectionForm() {
         if (error) throw error;
 
         // Enviar email al invitado y guardar en Airtable
+        // Convertir puntos a un formato más simple y seguro
+        const safePoints = diagramPoints.map(point => ({
+          x: Number(point.x),
+          y: Number(point.y),
+          color: point.color,
+          size: Number(point.size || 6)
+        }));
+
+        console.log('Puntos de diagrama para envío:', {
+          diagramPointsCount: safePoints.length,
+          diagramPointsExample: safePoints.slice(0, 3)
+        });
+
+        // Modificar el envío para usar el enlace del PDF
         await Promise.all([
-          sendFormEmail('guest-form', {
-            to_email: formData.guestEmail,
-            to_name: formData.guestName,
-            from_name: 'Golf Cart Inspection System',
-            from_email: 'no-reply@email.golfcartinspection.app',
-            property: formData.property,
-            cart_type: formData.cartType,
-            cart_number: formData.cartNumber,
-            inspection_date: formData.inspectionDate,
-            form_link: `${window.location.origin}/inspection/${inspection.id}`,
-            pdf_attachment: pdfUrl
-          }),
+          (() => {
+            // Registro detallado del PDF
+            console.log('Detalles del PDF:', {
+              pdfData: pdfData,
+              base64Disponible: !!pdfData?.download?.base64,
+              base64Length: pdfData?.download?.base64?.length
+            });
+
+            return sendFormEmail('guest-form', {
+              to_email: formData.guestEmail,
+              to_name: formData.guestName,
+              from_name: 'Golf Cart Inspection System',
+              from_email: 'no-reply@email.golfcartinspection.app',
+              property: formData.property,
+              cart_type: formData.cartType,
+              cart_number: formData.cartNumber,
+              inspection_date: formData.inspectionDate,
+              form_link: `${window.location.origin}/inspection/${inspection.id}`,
+              pdf_attachment: pdfUrl, // Usar el enlace del PDF directamente
+              
+              // Usar puntos seguros
+              diagram_points: safePoints,
+            });
+          })(),
           sendToAirtable({
             guestName: formData.guestName,
             inspectionDate: formData.inspectionDate,
             property: formData.property
           }, pdfUrl)
         ]);
+
+        console.log('Detalles de puntos de diagrama:', {
+          diagramPointsCount: safePoints.length,
+          diagramPointsExample: safePoints.slice(0, 3),
+          diagramPointsTypes: safePoints.map(p => typeof p)
+        });
 
         // Descargar versión local
         try {

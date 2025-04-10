@@ -1,0 +1,10 @@
+[studio]
+port = 54323
+
+[auth]
+site_url = "https://golf-cart-inspection.netlify.app/"
+additional_redirect_urls = ["https://golf-cart-inspection.netlify.app/"]
+
+[functions]
+[functions.verify_jwt]
+enabled = false
