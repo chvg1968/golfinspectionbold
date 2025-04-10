@@ -56,7 +56,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     address: '123 Golf Lane, San Juan, Puerto Rico',
     phone: '+1 (787) 555-1234',
     website: 'https://luxepropertiespr.com',
-    logoUrl: '/logo.png'
+    logoUrl: 'https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png'
   };
 
   const baseStyles = `
@@ -70,7 +70,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
 
   const buttonStyles = `
     background-color: #4CAF50; 
-    color: white; 
+    color: white;   
     padding: 15px 30px; 
     text-decoration: none; 
     border-radius: 5px; 
