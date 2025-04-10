@@ -428,15 +428,27 @@ function InspectionForm() {
           .eq('id', id)
           .single();
 
-        if (fetchError) {
+        if (fetchError || !inspectionData?.form_id) {
           console.error('Error obteniendo form_id:', fetchError);
-        } else {
-          // Actualizar el enlace del PDF en Airtable
-          try {
-            await updateAirtablePdfLink(inspectionData.form_id, pdfUrl);
-          } catch (updateError) {
-            console.error('Error actualizando PDF en Airtable:', updateError);
-          }
+          // Generar un form_id si no existe
+          const generatedFormId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+          
+          await supabase
+            .from('inspections')
+            .update({ 
+              form_id: generatedFormId,
+              form_link: `https://golf-cart-inspection.netlify.app/inspection/${generatedFormId}`
+            })
+            .eq('id', id);
+
+          inspectionData = { form_id: generatedFormId };
+        }
+
+        // Actualizar el enlace del PDF en Airtable
+        try {
+          await updateAirtablePdfLink(inspectionData.form_id, pdfUrl);
+        } catch (updateError) {
+          console.error('Error actualizando PDF en Airtable:', updateError);
         }
 
         // Enviar email de confirmación
@@ -451,7 +463,9 @@ function InspectionForm() {
             cart_number: formData.cartNumber,
             inspection_date: formData.inspectionDate,
             observations: formData.observations,
-            pdf_attachment: pdfUrl
+            pdf_attachment: pdfUrl,
+            formId: inspectionData.form_id, // Agregar formId aquí
+            form_link: pdfUrl // Agregar enlace del PDF
           }),
           // Enviar copia al administrador
           sendFormEmail('completed-form', {

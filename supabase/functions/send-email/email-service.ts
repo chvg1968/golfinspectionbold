@@ -11,27 +11,28 @@ export class EmailService {
 
   async sendEmail(params: EmailServiceParams) {
     console.log("Datos completos para envío de correo:", {
-      guestName: params.guestName,
-      guestEmail: params.guestEmail,
+      guestName: params.to_name,
+      guestEmail: params.to_email,
       property: params.property,
-      pdfBase64: params.pdfBase64 ? 'Base64 presente' : 'Base64 ausente'
+      pdfBase64: params.pdf_attachment ? 'Base64 presente' : 'Base64 ausente'
     });
 
     // Preparar datos del correo
     const emailData: EmailData = {
-      guestName: params.guestName,
-      guestEmail: params.guestEmail,
+      guestName: params.to_name,
+      guestEmail: params.to_email,
       property: params.property,
       type: params.type || 'guest-form',
-      inspectionDate: params.inspectionDate,
-      formLink: params.formLink,
-      replyTo: params.replyTo,
+      inspectionDate: params.inspection_date,
+      formLink: params.form_link,
+      formId: params.formId,
+      replyTo: params.reply_to,
       subject: params.subject || this.generateSubject(params),
-      pdfBase64: params.pdfBase64,
+      pdfBase64: params.pdf_attachment,
       
       // Campos adicionales de inspección
-      cartType: params.cartType,
-      cartNumber: params.cartNumber,
+      cartType: params.cart_type,
+      cartNumber: params.cart_number,
       damages: params.damages,
       observations: params.observations,
       

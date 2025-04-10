@@ -14,6 +14,8 @@ export interface EmailParams {
   subject?: string;
   observations?: string;
   diagram_base64?: string;
+  formId?: string;
+  isAdmin?: boolean;
   diagram_points?: Array<{
     x: number;
     y: number;

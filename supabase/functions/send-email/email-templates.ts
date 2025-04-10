@@ -11,8 +11,14 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
   } = data;
   
   const formLinkWithDomain = formId 
-    ? `https://golfinspectionbold.vercel.app/inspection/${formId}` 
+    ? `https://golf-cart-inspection.netlify.app/inspection/${formId}` 
     : formLink || '';
+
+  console.log('Generando enlace con dominio:', {
+    formId,
+    formLink,
+    formLinkWithDomain
+  });
 
   return {
     from: 'Luxe Properties <noreply@luxepropertiespr.com>',
@@ -86,8 +92,14 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
   `;
 
   const formLinkWithDomain = formId 
-    ? `https://golfinspectionbold.vercel.app/inspection/${formId}` 
+    ? `https://golf-cart-inspection.netlify.app/inspection/${formId}` 
     : formLink || '';
+
+  console.log('Generando enlace con dominio:', {
+    formId,
+    formLink,
+    formLinkWithDomain
+  });
 
   const guestEmailContent = {
     from: `${companyInfo.name} <noreply@luxepropertiespr.com>`,
