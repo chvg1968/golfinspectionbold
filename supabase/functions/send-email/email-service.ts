@@ -57,11 +57,8 @@ export class EmailService {
       to: emailContent.to,
       subject: emailContent.subject,
       html: emailContent.html,
-      attachments: emailContent.attachments || 
-        (emailData.pdfBase64 ? [{
-          filename: `Inspeccion_Carrito_${emailData.property}_${emailData.inspectionDate || 'Sin_Fecha'}.pdf`,
-          content: emailData.pdfBase64
-        }] : undefined)
+      // Eliminar adjuntos de PDF
+      attachments: undefined
     };
 
     console.log("Enviando correo con datos:", JSON.stringify(payload, null, 2));

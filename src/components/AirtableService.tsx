@@ -122,3 +122,62 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         throw error;
     }
 }
+
+export async function updateAirtablePdfLink(formId: string, pdfLink: string) {
+    // Validar variables de entorno
+    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
+    const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
+    const apiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
+
+    if (!baseId || !tableName || !apiKey) {
+        throw new Error('Faltan variables de entorno de Airtable');
+    }
+
+    // Buscar el registro existente
+    const searchUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(`{Form Id}='${formId}'`)}`;
+    const searchResponse = await fetch(searchUrl, {
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        }
+    });
+    const searchData = await searchResponse.json();
+
+    if (!searchData.records || searchData.records.length === 0) {
+        console.log('No se encontró registro para actualizar');
+        return null;
+    }
+
+    // Obtener el ID del primer registro encontrado
+    const recordId = searchData.records[0].id;
+
+    // Preparar datos para actualización
+    const updateData = {
+        fields: {
+            'PDF Link': pdfLink
+        }
+    };
+
+    // URL para actualizar el registro
+    const updateUrl = `https://api.airtable.com/v0/${baseId}/${tableName}/${recordId}`;
+
+    // Realizar actualización
+    const updateResponse = await fetch(updateUrl, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(updateData)
+    });
+
+    const updateResponseData = await updateResponse.json();
+
+    console.log('Actualización en Airtable:', {
+        success: updateResponse.ok,
+        recordId,
+        pdfLink
+    });
+
+    return updateResponseData;
+}
