@@ -54,47 +54,65 @@ export class EmailService {
       html: emailContent.html ? 'HTML presente' : 'Sin HTML'
     });
 
+    console.log("Datos completos de emailContent:", {
+      from: emailContent.from,
+      to: emailContent.to,
+      subject: emailContent.subject,
+      htmlLength: emailContent.html ? emailContent.html.length : 0
+    });
+
+    console.log("Datos completos de emailData:", {
+      guestName: emailData.guestName,
+      guestEmail: emailData.guestEmail,
+      property: emailData.property
+    });
+
     // Datos para el correo
     const payload = {
-      from: emailContent.from,
+      from: 'noreply@luxepropertiespr.com',
       to: emailData.guestEmail ? 
         `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` : 
         'hernancalendar01@gmail.com',
       subject: emailContent.subject,
-      html: emailContent.html,
+      html: emailContent.html || '<p>No HTML content</p>',
       // Eliminar adjuntos de PDF
       attachments: undefined
     };
 
-    console.log("Enviando correo con datos:", JSON.stringify(payload, null, 2));
+    console.log("Enviando correo con payload:", JSON.stringify(payload, null, 2));
 
     // Enviar correo
-    const response = await fetch(this.API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    let responseBody: string | null = null;
+    try {
+      const response = await fetch(this.API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
 
-    console.log("Respuesta de la API de correo:", {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error al enviar correo:", {
+      responseBody = await response.text();
+      console.log("Respuesta completa de Resend:", {
         status: response.status,
         statusText: response.statusText,
-        errorBody: errorText
+        body: responseBody
       });
-      throw new Error(`Error al enviar correo: ${errorText}`);
-    }
 
-    return response;
+      if (!response.ok) {
+        throw new Error(`Error en el envío: ${responseBody || 'Sin detalles'}`);
+      }
+
+      return responseBody ? JSON.parse(responseBody) : null;
+    } catch (error) {
+      console.error("Error detallado al enviar correo:", {
+        message: error.message,
+        payload: payload,
+        responseBody: responseBody || 'Sin respuesta'
+      });
+      throw error;
+    }
   }
 
   private generateSubject(params: EmailServiceParams): string {
