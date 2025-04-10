@@ -436,8 +436,8 @@ function InspectionForm() {
           // Generar un form_id si no existe
           formId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
           
-          // Generar nombre de PDF consistente
-          const pdfFileName = `${formData.property.toLowerCase().replace(/\s+/g, '_')}_${formData.cartType.toLowerCase().replace(/\s+/g, '_')}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+          // Generar nombre de PDF consistente con el formato del admin
+          const pdfFileName = `rental_6_passenger_150_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
           
           formLink = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}`;
           
