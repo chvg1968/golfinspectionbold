@@ -421,32 +421,34 @@ function InspectionForm() {
 
         if (error) throw error;
 
-        // Obtener el formId de la inspección
+        // Obtener datos de la inspección
         const { data: inspectionData, error: fetchError } = await supabase
           .from('inspections')
-          .select('form_id')
+          .select('form_id, form_link')
           .eq('id', id)
           .single();
-
-        if (fetchError || !inspectionData?.form_id) {
+        
+        let formId = inspectionData?.form_id;
+        let formLink = inspectionData?.form_link;
+        
+        if (fetchError || !formId) {
           console.error('Error obteniendo form_id:', fetchError);
           // Generar un form_id si no existe
-          const generatedFormId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+          formId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
+          formLink = `https://golf-cart-inspection.netlify.app/inspection/${formId}`;
           
           await supabase
             .from('inspections')
             .update({ 
-              form_id: generatedFormId,
-              form_link: `https://golf-cart-inspection.netlify.app/inspection/${generatedFormId}`
+              form_id: formId,
+              form_link: formLink
             })
             .eq('id', id);
-
-          inspectionData = { form_id: generatedFormId };
         }
 
         // Actualizar el enlace del PDF en Airtable
         try {
-          await updateAirtablePdfLink(inspectionData.form_id, pdfUrl);
+          await updateAirtablePdfLink(formId, pdfUrl);
         } catch (updateError) {
           console.error('Error actualizando PDF en Airtable:', updateError);
         }
@@ -464,8 +466,8 @@ function InspectionForm() {
             inspection_date: formData.inspectionDate,
             observations: formData.observations,
             pdf_attachment: pdfUrl,
-            formId: inspectionData.form_id, // Agregar formId aquí
-            form_link: pdfUrl // Agregar enlace del PDF
+            formId: formId,
+            form_link: formLink
           }),
           // Enviar copia al administrador
           sendFormEmail('completed-form', {
