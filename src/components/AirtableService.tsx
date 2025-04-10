@@ -181,13 +181,3 @@ export async function updateAirtablePdfLink(formId: string, pdfLink: string) {
 
     return updateResponseData;
 }
-
-function generateFormId(guestName: string): string {
-    // Generar un ID único y legible
-    const timestamp = new Date().getTime();
-    const cleanName = guestName
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
-    return `${cleanName}-${timestamp}`;
-}
