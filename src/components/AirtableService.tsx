@@ -12,6 +12,12 @@ interface InspectionFormData {
 }
 
 export async function sendToAirtable(formData: InspectionFormData, pdfLink: string) {
+    // Solo enviar a Airtable si hay un PDF link (implica que está firmado)
+    if (!pdfLink) {
+        console.log('No hay PDF firmado, no se envía a Airtable');
+        return null;
+    }
+
     // Validar variables de entorno
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
     const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;

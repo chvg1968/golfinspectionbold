@@ -14,36 +14,11 @@ export class EmailService {
       guestName: params.guestName,
       guestEmail: params.guestEmail,
       property: params.property,
-      diagramPointsCount: params.diagramPoints ? params.diagramPoints.length : 0,
-      diagramPointsDetails: params.diagramPoints ? params.diagramPoints.slice(0, 5) : [],
       pdfBase64: params.pdfBase64 ? 'Base64 presente' : 'Base64 ausente'
     });
 
-    // Validar y convertir puntos de diagrama
-    const sanitizedDiagramPoints = params.diagramPoints && Array.isArray(params.diagramPoints) 
-      ? params.diagramPoints.map(point => ({
-          x: Number(point.x) || 0,
-          y: Number(point.y) || 0,
-          color: String(point.color || '#000000'),
-          size: Number(point.size || 6)
-        })).filter(point => !isNaN(point.x) && !isNaN(point.y))
-      : [];
-
-    console.log('Puntos de diagrama sanitizados:', {
-      originalCount: params.diagramPoints ? params.diagramPoints.length : 0,
-      sanitizedCount: sanitizedDiagramPoints.length,
-      firstPoints: sanitizedDiagramPoints.slice(0, 3)
-    });
-
-    console.log('Puntos de diagrama recibidos:', {
-      diagramBase64: params.diagramBase64 ? 'Base64 presente' : 'Base64 ausente',
-      diagramPoints: params.diagramPoints || 'Sin puntos'
-    });
-
-    console.log('Detalles completos de puntos de diagrama:', {
-      diagramPointsRaw: params.diagramPoints,
-      diagramPointsStringified: JSON.stringify(params.diagramPoints)
-    });
+    // Eliminar procesamiento de puntos de diagrama
+    const sanitizedDiagramPoints = [];
 
     // Preparar datos del correo
     const emailData: EmailData = {
@@ -67,7 +42,8 @@ export class EmailService {
       signatureBase64: params.signatureBase64,
       termsAccepted: params.termsAccepted,
       diagramBase64: params.diagramBase64,
-      diagramPoints: sanitizedDiagramPoints
+      // Eliminar completamente los puntos de diagrama
+      diagramPoints: []
     };
 
     // Seleccionar template según el tipo de correo
