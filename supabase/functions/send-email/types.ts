@@ -9,6 +9,7 @@ export interface EmailData {
   replyTo?: string;
   subject?: string;
   pdfBase64?: string;
+  formId?: string;
   
   // Campos adicionales para la inspección de carrito de golf
   cartType?: string;

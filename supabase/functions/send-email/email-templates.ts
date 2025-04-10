@@ -7,8 +7,13 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
     property, 
     inspectionDate, 
     formLink, 
+    formId
   } = data;
   
+  const formLinkWithDomain = formId 
+    ? `https://golfinspectionbold.vercel.app/inspection/${formId}` 
+    : formLink || '';
+
   return {
     from: 'Luxe Properties <noreply@luxepropertiespr.com>',
     to: [guestEmail],
@@ -20,7 +25,7 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
         <p style="margin-bottom: 20px;">An inspection form has been created for the golf cart at ${property}. Please complete this form at your earliest convenience.</p>
         <p style="margin-bottom: 20px;">For a better experience in mobile devices, please rotate your device to landscape mode.</p>
         <div style="margin: 30px 0; text-align: center;">
-          <a href="${formLink}" 
+          <a href="${formLinkWithDomain}" 
              style="background-color: #4CAF50; 
                     color: white; 
                     padding: 15px 30px; 
@@ -33,7 +38,7 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
           </a>
         </div>
         <p style="margin-bottom: 10px;">If the button above doesn't work, copy and paste this link into your browser:</p>
-        <p style="margin-bottom: 20px; word-break: break-all; color: #4a5568;">${formLink}</p>
+        <p style="margin-bottom: 20px; word-break: break-all; color: #4a5568;">${formLinkWithDomain}</p>
         <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
           <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
           <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
@@ -47,7 +52,7 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
 }
 
 export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): EmailContentParams {
-  const { guestName, guestEmail, property, cartType, cartNumber, observations, formLink } = data;
+  const { guestName, guestEmail, property, cartType, cartNumber, observations, formId, formLink } = data;
   
   const attachments: Array<{filename: string, content: string}> = [];
 
@@ -80,6 +85,10 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     margin: 20px 0;
   `;
 
+  const formLinkWithDomain = formId 
+    ? `https://golfinspectionbold.vercel.app/inspection/${formId}` 
+    : formLink || '';
+
   const guestEmailContent = {
     from: `${companyInfo.name} <noreply@luxepropertiespr.com>`,
     to: [guestEmail],
@@ -92,7 +101,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
         <p>Thank you for completing the golf cart inspection form for ${property}. Your signed document is now ready.</p>
         
         <div style="text-align: center;">
-          <a href="${formLink}" style="${buttonStyles}">View Signed PDF</a>
+          <a href="${formLinkWithDomain}" style="${buttonStyles}">View Signed PDF</a>
         </div>
         
         <div style="background-color: #f7fafc; border-radius: 5px; padding: 15px; margin: 20px 0;">
@@ -143,7 +152,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
         </div>
         
         <div style="text-align: center;">
-          <a href="${formLink}" style="${buttonStyles}">View Signed PDF</a>
+          <a href="${formLinkWithDomain}" style="${buttonStyles}">View Signed PDF</a>
         </div>
         
         <p style="margin-top: 20px;">
