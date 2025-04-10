@@ -18,7 +18,7 @@ export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
         <h2 style="color: #2c5282; margin-bottom: 20px;">Golf Cart Inspection Form</h2>
         <p style="margin-bottom: 15px;">Dear ${guestName},</p>
         <p style="margin-bottom: 20px;">An inspection form has been created for the golf cart at ${property}. Please complete this form at your earliest convenience.</p>
-        
+        <p style="margin-bottom: 20px;">For a better experience in mobile devices, please rotate your device to landscape mode.</p>
         <div style="margin: 30px 0; text-align: center;">
           <a href="${formLink}" 
              style="background-color: #4CAF50; 
