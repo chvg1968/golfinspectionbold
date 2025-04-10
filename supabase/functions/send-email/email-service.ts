@@ -17,9 +17,6 @@ export class EmailService {
       pdfBase64: params.pdfBase64 ? 'Base64 presente' : 'Base64 ausente'
     });
 
-    // Eliminar procesamiento de puntos de diagrama
-    const sanitizedDiagramPoints = [];
-
     // Preparar datos del correo
     const emailData: EmailData = {
       guestName: params.guestName,
