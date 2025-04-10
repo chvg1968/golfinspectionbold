@@ -69,7 +69,7 @@ export class EmailService {
 
     // Datos para el correo
     const payload = {
-      from: 'noreply@luxepropertiespr.com',
+      from: 'Luxe Properties <noreply@luxepropertiespr.com>',
       to: emailData.guestEmail ? 
         `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` : 
         'hernancalendar01@gmail.com',
