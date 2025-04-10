@@ -229,24 +229,56 @@ async function handleRequest(req: Request): Promise<Response> {
       }
     }
 
-    // Enviar correo
-    const result = await emailService.sendEmail(data);
+    // Enviar correo electrónico
+    const emailService = new EmailService(Deno.env.get('RESEND_API_KEY') || '');
+    try {
+      const emailResult = await emailService.sendEmail({
+        to_name: data.guestName,
+        to_email: data.guestEmail,
+        property: data.property,
+        type: data.type,
+        inspection_date: data.inspectionDate,
+        form_link: data.formLink,
+        formId: data.formId,
+        reply_to: data.replyTo,
+        cart_type: data.cartType,
+        cart_number: data.cartNumber,
+        observations: data.observations,
+        pdf_attachment: data.pdfBase64
+      });
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Correo enviado exitosamente",
-        result: await result.json() 
-      }), 
-      { 
-        status: 200,
-        headers: { 
-          'Access-Control-Allow-Origin': origin,
-          'Content-Type': 'application/json',
-          'Vary': 'Origin'
-        } 
-      }
-    );
+      // Devolver una respuesta exitosa
+      return new Response(
+        JSON.stringify({ 
+          message: "Correo enviado exitosamente", 
+          result: emailResult || {} 
+        }), 
+        { 
+          status: 200,
+          headers: { 
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json',
+            'Vary': 'Origin'
+          } 
+        }
+      );
+    } catch (error) {
+      console.error('Error al enviar correo:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: "Error al enviar correo",
+          details: error.message 
+        }), 
+        { 
+          status: 500,
+          headers: { 
+            'Access-Control-Allow-Origin': origin,
+            'Content-Type': 'application/json',
+            'Vary': 'Origin'
+          } 
+        }
+      );
+    }
 
   } catch (error) {
     console.error("Error en función de email:", error);
