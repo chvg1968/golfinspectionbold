@@ -57,9 +57,14 @@ export class EmailService {
     // Datos para el correo
     const payload = {
       from: emailContent.from,
-      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
+      to: typeof emailContent.to === 'string' 
+        ? emailContent.to 
+        : Array.isArray(emailContent.to) 
+          ? `${emailData.guestName || ''} <${emailData.guestEmail}>` 
+          : '',
       subject: emailContent.subject,
       html: emailContent.html,
+      // Eliminar adjuntos de PDF
       attachments: undefined
     };
 
