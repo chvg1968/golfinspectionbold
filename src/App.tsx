@@ -435,7 +435,7 @@ function InspectionForm() {
           console.error('Error obteniendo form_id:', fetchError);
           // Generar un form_id si no existe
           formId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-          formLink = `https://golf-cart-inspection.netlify.app/inspection/${formId}`;
+          formLink = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/${formId}.pdf`;
           
           await supabase
             .from('inspections')
