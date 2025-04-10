@@ -19,12 +19,12 @@ export class EmailService {
 
     // Preparar datos del correo
     const emailData: EmailData = {
-      guestName: params.to_name,
-      guestEmail: params.to_email,
+      guestName: params.to_name || '',
+      guestEmail: params.to_email || '',
       property: params.property,
       type: params.type || 'guest-form',
       inspectionDate: params.inspection_date,
-      formLink: params.form_link,
+      formLink: params.form_link || this.generateFormLink(params),
       formId: params.formId,
       replyTo: params.reply_to,
       subject: params.subject || this.generateSubject(params),
@@ -33,14 +33,12 @@ export class EmailService {
       // Campos adicionales de inspección
       cartType: params.cart_type,
       cartNumber: params.cart_number,
-      damages: params.damages,
       observations: params.observations,
       
       // Campos de firma y términos
       signatureBase64: params.signatureBase64,
       termsAccepted: params.termsAccepted,
       diagramBase64: params.diagramBase64,
-      // Eliminar completamente los puntos de diagrama
       diagramPoints: []
     };
 
@@ -49,13 +47,19 @@ export class EmailService {
       ? getGuestFormEmailContent(emailData)
       : getCompletedFormEmailContent(emailData, params.isAdmin);
 
+    console.log("Datos de email completos:", {
+      from: emailContent.from,
+      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
+      subject: emailContent.subject,
+      html: emailContent.html ? 'HTML presente' : 'Sin HTML'
+    });
+
     // Datos para el correo
     const payload = {
       from: emailContent.from,
-      to: emailContent.to,
+      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
       subject: emailContent.subject,
       html: emailContent.html,
-      // Eliminar adjuntos de PDF
       attachments: undefined
     };
 
@@ -100,5 +104,22 @@ export class EmailService {
     }
     
     return `Inspección de Carrito: ${baseSuffix}`;
+  }
+
+  private generateFormLink(params: EmailServiceParams): string {
+    // Generar un link basado en los parámetros disponibles
+    const baseUrl = 'https://golf-cart-inspection.netlify.app';
+    
+    if (params.formId) {
+      return `${baseUrl}/inspection/${params.formId}`;
+    }
+    
+    if (params.to_name && params.property) {
+      const sluggedName = params.to_name.toLowerCase().replace(/\s+/g, '-');
+      const sluggedProperty = params.property.toLowerCase().replace(/\s+/g, '-');
+      return `${baseUrl}/inspection/${sluggedName}-${sluggedProperty}-${Date.now()}`;
+    }
+    
+    return `${baseUrl}/inspection`;
   }
 }
