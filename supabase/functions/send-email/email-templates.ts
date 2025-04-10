@@ -55,7 +55,8 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     name: 'Luxe Properties',
     address: '123 Golf Lane, San Juan, Puerto Rico',
     phone: '+1 (787) 555-1234',
-    website: 'https://luxepropertiespr.com'
+    website: 'https://luxepropertiespr.com',
+    logoUrl: 'https://golf-cart-inspection.netlify.app/diagrams/logo.png'
   };
 
   const baseStyles = `
@@ -85,7 +86,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     subject: `Golf Cart Inspection Completed - ${property}`,
     html: `
       <div style="${baseStyles}">
-        <img src="https://luxepropertiespr.com/logo.png" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
+        <img src="${companyInfo.logoUrl}" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
         <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Form Confirmation</h2>
         <p>Dear ${guestName},</p>
         <p>Thank you for completing the golf cart inspection form for ${property}. Your signed document is now ready.</p>
@@ -129,7 +130,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     subject: `Completed Inspection - ${property}`,
     html: `
       <div style="${baseStyles}">
-        <img src="https://luxepropertiespr.com/logo.png" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
+        <img src="${companyInfo.logoUrl}" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
         <h2 style="color: #2c5282; margin-bottom: 20px;">New Inspection Completed</h2>
         
         <div style="background-color: #f7fafc; border-radius: 5px; padding: 15px; margin: 20px 0;">
