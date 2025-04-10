@@ -56,7 +56,7 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
     address: '123 Golf Lane, San Juan, Puerto Rico',
     phone: '+1 (787) 555-1234',
     website: 'https://luxepropertiespr.com',
-    logoUrl: 'https://golf-cart-inspection.netlify.app/diagrams/logo.png'
+    logoUrl: 'https://golf-cart-inspection.netlify.app/logo.png'
   };
 
   const baseStyles = `
