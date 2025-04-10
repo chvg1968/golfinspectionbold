@@ -435,7 +435,11 @@ function InspectionForm() {
           console.error('Error obteniendo form_id:', fetchError);
           // Generar un form_id si no existe
           formId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-          formLink = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/${formId}.pdf`;
+          
+          // Generar nombre de PDF consistente
+          const pdfFileName = `${formData.property.toLowerCase().replace(/\s+/g, '_')}_${formData.cartType.toLowerCase().replace(/\s+/g, '_')}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+          
+          formLink = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}`;
           
           await supabase
             .from('inspections')
@@ -492,7 +496,7 @@ function InspectionForm() {
             const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = pdfFilename;
+            link.download = pdfFileName;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
