@@ -112,10 +112,6 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
         <p>Dear ${guestName},</p>
         <p>Thank you for completing the golf cart inspection form for ${property}. Your signed document is now ready.</p>
         
-        <div style="text-align: center;">
-          <a href="${formLinkWithDomain}" style="${buttonStyles}">View Signed PDF</a>
-        </div>
-        
         <div style="background-color: #f7fafc; border-radius: 5px; padding: 15px; margin: 20px 0;">
           <p><strong>Property:</strong> ${property}</p>
           <p><strong>Cart Type:</strong> ${cartType}</p>
