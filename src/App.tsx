@@ -13,6 +13,7 @@ import { ThankYou } from './components/ThankYou';
 import { sendFormEmail } from './lib/email';
 import { sendToAirtable, updateAirtablePdfLink } from './components/AirtableService';
 import { generateFormPDF } from './components/PDFGenerator';
+import './styles/orientation-warning.css';
 
 interface PDFVersion {
   blob: Blob;
@@ -41,6 +42,26 @@ function InspectionForm() {
   interface Notification { type: 'success' | 'error'; message: string; }
 
   const [notification, setNotification] = useState<Notification | null>(null);
+  const [isLandscape, setIsLandscape] = useState(true);
+
+  // Efecto para detectar orientación del dispositivo
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isLandscapeMode = window.innerWidth > window.innerHeight;
+      setIsLandscape(isLandscapeMode);
+    };
+
+    // Verificar orientación inicial
+    checkOrientation();
+
+    // Agregar listener para cambios de orientación
+    window.addEventListener('resize', checkOrientation);
+
+    // Limpiar listener al desmontar
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+    };
+  }, []);
 
   // Limpiar notificación después de 5 segundos
   useEffect(() => {
@@ -530,6 +551,11 @@ function InspectionForm() {
           role="alert"
         >
           {notification.message}
+        </div>
+      )}
+      {!isLandscape && (
+        <div className="orientation-warning">
+          🔄 Por favor, gira tu dispositivo a modo horizontal para una mejor experiencia
         </div>
       )}
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
