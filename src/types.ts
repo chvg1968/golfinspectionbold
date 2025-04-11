@@ -112,6 +112,14 @@ export const PROPERTIES: Property[] = [
     diagramType: 'villaclara_3325.jpg'
   },
   { 
+    id: 'apt_2_102_72', 
+    name: 'Apt 2-102 #72', 
+    type: 'string', 
+    required: false, 
+    cartNumber: '119', 
+    diagramType: 'apt2102_72.jpg'
+  },
+  { 
     id: 'villa_paloma_5138', 
     name: 'Villa Paloma 5138', 
     type: 'string', 
