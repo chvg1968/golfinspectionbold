@@ -116,7 +116,7 @@ export const PROPERTIES: Property[] = [
     name: 'Apt 2-102 #72', 
     type: 'string', 
     required: false, 
-    cartNumber: '119', 
+    cartNumber: '72', 
     diagramType: 'apt2102_72.jpg'
   },
   { 
