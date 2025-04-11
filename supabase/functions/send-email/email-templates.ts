@@ -163,10 +163,6 @@ export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): 
           <p><strong>Observations:</strong> ${observations || 'No observations provided'}</p>
         </div>
         
-        <div style="text-align: center;">
-          <a href="${formLinkWithDomain}" style="${buttonStyles}">View Signed PDF</a>
-        </div>
-        
         <p style="margin-top: 20px;">
           ${companyInfo.address}<br>
           ${companyInfo.phone}<br>
