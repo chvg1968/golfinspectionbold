@@ -555,7 +555,7 @@ function InspectionForm() {
       )}
       {!isLandscape && (
         <div className="orientation-warning">
-          🔄 Por favor, gira tu dispositivo a modo horizontal para una mejor experiencia
+          🔄 Please rotate your device to landscape for a better experience
         </div>
       )}
       <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
