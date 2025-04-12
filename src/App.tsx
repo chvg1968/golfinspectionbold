@@ -31,7 +31,7 @@ interface FormData {
   guestPhone: string;
   inspectionDate: string;
   property: string;
-  cartType: string;
+  cartType?: string;
   cartNumber: string;
   observations: string;
 }
@@ -217,7 +217,7 @@ function InspectionForm() {
       setFormData(prev => ({
         ...prev,
         property: property.id,
-        cartType: property.diagramType.includes('6seater') ? '6-Seater' : '4-Seater',
+        cartType: property.cartType,
         cartNumber: property.cartNumber
       }));
       setDiagramPoints([]);

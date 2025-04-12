@@ -4,7 +4,7 @@ import { PROPERTIES } from '../types';
 interface PropertyInformationProps {
   formData: {
     property: string;
-    cartType: string;
+    cartType?: string;
     cartNumber: string;
   };
   isGuestView: boolean;
@@ -52,7 +52,7 @@ export function PropertyInformation({ formData, isGuestView, onPropertyChange }:
           <input
             type="text"
             name="cartType"
-            value={formData.cartType}
+            value={formData.cartType || 'Not selected'}
             readOnly
             aria-label="Cart Type"
             title="Cart Type"

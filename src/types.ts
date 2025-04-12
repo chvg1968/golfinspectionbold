@@ -5,6 +5,7 @@ export interface Property {
   required: boolean;
   cartNumber: string;
   diagramType: string;
+  cartType?: string;
 }
 
 export interface Point {
@@ -45,7 +46,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '150', 
-    diagramType: 'rental_150.jpg'
+    diagramType: 'rental_150.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'rental_6_passenger_144', 
@@ -53,7 +55,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '144', 
-    diagramType: 'rental_144.jpg'
+    diagramType: 'rental_144.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'villa_flora_10180', 
@@ -61,7 +64,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '18', 
-    diagramType: 'villaflora_10180.jpg'
+    diagramType: 'villaflora_10180.jpg',
+    cartType: '4-Seater'  
   },
   { 
     id: 'ocean_haven_208', 
@@ -69,7 +73,9 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '71', 
-    diagramType: 'oceanhaven_208.jpg'
+    diagramType: 'oceanhaven_208.jpg',
+    cartType: '4-Seater'
+
   },
   { 
     id: 'casa_prestige_g7_4_passenger', 
@@ -77,7 +83,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '22', 
-    diagramType: 'casaprestige_4.jpg'
+    diagramType: 'casaprestige_4.jpg',
+    cartType: '4-Seater'
   },
   { 
     id: 'casa_prestige_g7_6_passenger', 
@@ -85,7 +92,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '193', 
-    diagramType: 'casaprestige_6.jpg'
+    diagramType: 'casaprestige_6.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'villa_tiffany_10389', 
@@ -93,7 +101,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '136', 
-    diagramType: 'villatiffany_10389.jpg'
+    diagramType: 'villatiffany_10389.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'villa_palacio_7256', 
@@ -109,7 +118,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '119', 
-    diagramType: 'villaclara_3325.jpg'
+    diagramType: 'villaclara_3325.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'apt_2_102_72', 
@@ -117,7 +127,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '72', 
-    diagramType: 'apt2102_72.jpg'
+    diagramType: 'apt2102_72.jpg',
+    cartType: '4-Seater'
   },
   { 
     id: 'villa_paloma_5138', 
@@ -125,6 +136,7 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '101', 
-    diagramType: 'villapaloma_5138.jpg'
+    diagramType: 'villapaloma_5138.jpg',
+    cartType: '6-Seater'
   }
 ];
