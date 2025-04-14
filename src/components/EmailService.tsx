@@ -12,7 +12,7 @@ interface EmailServiceProps {
     formLink?: string;
     inspectionData?: {
       observations: string;
-      cartType?: string;
+      cartType: string;
       cartNumber: string;
     };
     pdfUrl?: string;

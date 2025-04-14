@@ -1,177 +1,146 @@
-import { EmailData, EmailContentParams } from './types.ts';
+import { EmailData, EmailServiceParams } from "./types.ts";
+import { getGuestFormEmailContent, getCompletedFormEmailContent } from "./email-templates.ts";
 
-export function getGuestFormEmailContent(data: EmailData): EmailContentParams {
-  const { 
-    guestName, 
-    guestEmail, 
-    property, 
-    inspectionDate, 
-    formLink, 
-    formId
-  } = data;
-  
-  const formLinkWithDomain = formId 
-    ? `https://golf-cart-inspection.netlify.app/inspection/${formId}` 
-    : formLink || '';
+export class EmailService {
+  private API_ENDPOINT = "https://api.resend.com/emails";
+  private apiKey: string;
 
-  console.log('Generando enlace con dominio:', {
-    formId,
-    formLink,
-    formLinkWithDomain
-  });
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
 
-  return {
-    from: 'Luxe Properties <noreply@luxepropertiespr.com>',
-    to: [guestEmail],
-    subject: `Golf Cart Inspection Form for ${property}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2c5282; margin-bottom: 20px;">Golf Cart Inspection Form</h2>
-        <p style="margin-bottom: 15px;">Dear ${guestName},</p>
-        <p style="margin-bottom: 20px;">An inspection form has been created for the golf cart at ${property}. Please complete this form at your earliest convenience.</p>
-        <p style="margin-bottom: 20px;">For a better experience in mobile devices, please rotate your device to landscape mode.</p>
-        <div style="margin: 30px 0; text-align: center;">
-          <a href="${formLinkWithDomain}" 
-             style="background-color: #4CAF50; 
-                    color: white; 
-                    padding: 15px 30px; 
-                    text-decoration: none; 
-                    border-radius: 5px; 
-                    display: inline-block;
-                    font-weight: bold;
-                    font-size: 16px;">
-            Complete Inspection Form
-          </a>
-        </div>
-        <p style="margin-bottom: 10px;">If the button above doesn't work, copy and paste this link into your browser:</p>
-        <p style="margin-bottom: 20px; word-break: break-all; color: #4a5568;">${formLinkWithDomain}</p>
-        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
-          <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
-          <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
-        </div>
-        <p style="color: #666; margin-bottom: 20px;">If you have any questions, please reply to this email.</p>
-        <hr style="border: 1px solid #eee; margin: 20px 0;">
-        <p style="color: #666;">Best regards,<br>Golf Cart Inspection Team</p>
-      </div>
-    `
-  };
-}
+  async sendEmail(params: EmailServiceParams) {
+    console.log("Datos completos para envío de correo:", {
+      guestName: params.to_name,
+      guestEmail: params.to_email,
+      property: params.property,
+      pdfBase64: params.pdf_attachment ? 'Base64 presente' : 'Base64 ausente'
+    });
 
-export function getCompletedFormEmailContent(data: EmailData, isAdmin = false): EmailContentParams {
-  const { guestName, guestEmail, property, cartType, cartNumber, observations, formId, formLink } = data;
-  
-  const attachments: Array<{filename: string, content: string}> = [];
+    // Preparar datos del correo
+    const emailData: EmailData = {
+      guestName: params.to_name || '',
+      guestEmail: params.to_email || '',
+      property: params.property,
+      type: params.type || 'guest-form',
+      inspectionDate: params.inspection_date,
+      formLink: params.form_link || this.generateFormLink(params),
+      formId: params.formId,
+      replyTo: params.reply_to,
+      subject: params.subject || this.generateSubject(params),
+      pdfBase64: params.pdf_attachment,
+      
+      // Campos adicionales de inspección
+      cartType: params.cart_type,
+      cartNumber: params.cart_number,
+      observations: params.observations,
+      
+      // Campos de firma y términos
+      signatureBase64: params.signatureBase64,
+      termsAccepted: params.termsAccepted,
+      diagramBase64: params.diagramBase64,
+      diagramPoints: []
+    };
 
-  const companyInfo = {
-    name: 'Luxe Properties',
-    address: '123 Golf Lane, San Juan, Puerto Rico',
-    phone: '+1 (787) 555-1234',
-    website: 'https://luxepropertiespr.com',
-    logoUrl: 'https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png'
-  };
+    // Seleccionar template según el tipo de correo
+    const emailContent = emailData.type === 'guest-form'
+      ? getGuestFormEmailContent(emailData)
+      : getCompletedFormEmailContent(emailData, params.isAdmin);
 
-  const baseStyles = `
-    font-family: Arial, sans-serif; 
-    max-width: 600px; 
-    margin: 0 auto; 
-    padding: 20px; 
-    line-height: 1.6;
-    color: #333;
-  `;
+    console.log("Datos de email completos:", {
+      from: emailContent.from,
+      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
+      subject: emailContent.subject,
+      html: emailContent.html ? 'HTML presente' : 'Sin HTML'
+    });
 
-  const buttonStyles = `
-    background-color: #4CAF50; 
-    color: white;   
-    padding: 15px 30px; 
-    text-decoration: none; 
-    border-radius: 5px; 
-    display: inline-block;
-    font-weight: bold;
-    font-size: 16px;
-    margin: 20px 0;
-  `;
+    console.log("Datos completos de emailContent:", {
+      from: emailContent.from,
+      to: emailContent.to,
+      subject: emailContent.subject,
+      htmlLength: emailContent.html ? emailContent.html.length : 0
+    });
 
-  const formLinkWithDomain = formId 
-    ? `https://golf-cart-inspection.netlify.app/inspection/${formId}` 
-    : formLink || '';
+    console.log("Datos completos de emailData:", {
+      guestName: emailData.guestName,
+      guestEmail: emailData.guestEmail,
+      property: emailData.property
+    });
 
-  console.log('Generando enlace con dominio:', {
-    formId,
-    formLink,
-    formLinkWithDomain
-  });
+    // Datos para el correo
+    const payload = {
+      from: 'Luxe Properties <noreply@luxepropertiespr.com>',
+      to: emailData.guestEmail ? 
+        `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` : 
+        'hernancalendar01@gmail.com',
+      subject: emailContent.subject,
+      html: emailContent.html || '<p>No HTML content</p>',
+      // Eliminar adjuntos de PDF
+      attachments: undefined
+    };
 
-  const guestEmailContent = {
-    from: `${companyInfo.name} <noreply@luxepropertiespr.com>`,
-    to: [guestEmail],
-    subject: `Golf Cart Inspection Completed - ${property}`,
-    html: `
-      <div style="${baseStyles}">
-        <img src="${companyInfo.logoUrl}" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
-        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Form Confirmation</h2>
-        <p>Dear ${guestName},</p>
-        <p>Thank you for completing the golf cart inspection form for ${property}. Your signed document is now ready.</p>
-        
-        <div style="background-color: #f7fafc; border-radius: 5px; padding: 15px; margin: 20px 0;">
-          <p><strong>Property:</strong> ${property}</p>
-          <p><strong>Cart Type:</strong> ${cartType}</p>
-          <p><strong>Cart Number:</strong> ${cartNumber}</p>
-        </div>
-        
-        <p style="margin-top: 20px;">If you have any questions, please contact us:</p>
-        <p>
-          📞 ${companyInfo.phone}<br>
-          🌐 ${companyInfo.website}
-        </p>
-        
-        <p style="color: #666; margin-top: 30px; font-size: 12px;">
-          ${new Date().getFullYear()} ${companyInfo.name}. All rights reserved.<br>
-          ${companyInfo.address}
-        </p>
-        
-        <p style="font-size: 10px; color: #999;">
-          This is a transactional email. Please do not reply to this message.
-        </p>
-      </div>
-    `,
-    attachments,
-    headers: {
-      'List-Unsubscribe': `<mailto:unsubscribe@luxepropertiespr.com?subject=Unsubscribe>`
+    console.log("Enviando correo con payload:", JSON.stringify(payload, null, 2));
+
+    // Enviar correo
+    let responseBody: string | null = null;
+    try {
+      const response = await fetch(this.API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      responseBody = await response.text();
+      console.log("Respuesta completa de Resend:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error en el envío: ${responseBody || 'Sin detalles'}`);
+      }
+
+      return responseBody ? JSON.parse(responseBody) : null;
+    } catch (error) {
+      console.error("Error detallado al enviar correo:", {
+        message: error.message,
+        payload: payload,
+        responseBody: responseBody || 'Sin respuesta'
+      });
+      throw error;
     }
-  };
+  }
 
-  const adminEmailContent = {
-    from: `${companyInfo.name} <noreply@luxepropertiespr.com>`,
-    to: ['hernancalendar01@gmail.com'],
-    reply_to: guestEmail,
-    subject: `Completed Inspection - ${property}`,
-    html: `
-      <div style="${baseStyles}">
-        <img src="${companyInfo.logoUrl}" alt="${companyInfo.name} Logo" style="max-width: 200px; margin-bottom: 20px;">
-        <h2 style="color: #2c5282; margin-bottom: 20px;">New Inspection Completed</h2>
-        
-        <div style="background-color: #f7fafc; border-radius: 5px; padding: 15px; margin: 20px 0;">
-          <p><strong>Guest Name:</strong> ${guestName}</p>
-          <p><strong>Guest Email:</strong> ${guestEmail}</p>
-          <p><strong>Property:</strong> ${property}</p>
-          <p><strong>Cart Type:</strong> ${cartType}</p>
-          <p><strong>Cart Number:</strong> ${cartNumber}</p>
-          <p><strong>Observations:</strong> ${observations || 'No observations provided'}</p>
-        </div>
-        
-        <p style="margin-top: 20px;">
-          ${companyInfo.address}<br>
-          ${companyInfo.phone}<br>
-          ${companyInfo.website}
-        </p>
-        
-        <p style="color: #666; margin-top: 30px; font-size: 12px;">
-          ${new Date().getFullYear()} ${companyInfo.name}. All rights reserved.
-        </p>
-      </div>
-    `,
-    attachments
-  };
+  private generateSubject(params: EmailServiceParams): string {
+    const baseSuffix = `Inspección de Carrito - ${params.property}`;
+    
+    if (params.type === 'guest-form') {
+      return `Formulario de Inspección Inicial: ${baseSuffix}`;
+    } else if (params.type === 'completed-form') {
+      return `Formulario de Inspección Completado: ${baseSuffix}`;
+    }
+    
+    return `Inspección de Carrito: ${baseSuffix}`;
+  }
 
-  return isAdmin ? adminEmailContent : guestEmailContent;
+  private generateFormLink(params: EmailServiceParams): string {
+    // Generar un link basado en los parámetros disponibles
+    const baseUrl = 'https://golf-cart-inspection.netlify.app';
+    
+    if (params.formId) {
+      return `${baseUrl}/inspection/${params.formId}`;
+    }
+    
+    if (params.to_name && params.property) {
+      const sluggedName = params.to_name.toLowerCase().replace(/\s+/g, '-');
+      const sluggedProperty = params.property.toLowerCase().replace(/\s+/g, '-');
+      return `${baseUrl}/inspection/${sluggedName}-${sluggedProperty}-${Date.now()}`;
+    }
+    
+    return `${baseUrl}/inspection`;
+  }
 }
