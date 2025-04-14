@@ -110,7 +110,8 @@ export const PROPERTIES: Property[] = [
     type: 'string', 
     required: false, 
     cartNumber: '130', 
-    diagramType: 'villapalacio_7256.jpg'
+    diagramType: 'villapalacio_7256.jpg',
+    cartType: '6-Seater'
   },
   { 
     id: 'villa_clara_3325', 

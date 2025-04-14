@@ -214,7 +214,7 @@ export function DiagramCanvas({
 
   return (
     <section className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-700">Diagrama</h2>
+      <h2 className="text-xl font-semibold text-gray-700">Diagram</h2>
       
       <div className="flex items-center gap-6 mb-4">
         <span className="text-sm font-medium text-gray-700">Color reference:</span>
