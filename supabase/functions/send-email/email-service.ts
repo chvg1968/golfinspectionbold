@@ -23,10 +23,11 @@ export class EmailService {
       pdfBase64: params.pdf_attachment ? 'Base64 presente' : 'Base64 ausente'
     });
 
-    // Preparar datos del correo
+    // Preparar datos del correo con valores validados
     const emailData: EmailData = {
-      guestName: params.to_name || '',
-      guestEmail: params.to_email || '',
+      // Asegurarse de que guestName y guestEmail sean strings válidos
+      guestName: params.to_name && typeof params.to_name === 'string' ? params.to_name.trim() : '',
+      guestEmail: params.to_email && typeof params.to_email === 'string' ? params.to_email.trim() : '',
       property: params.property,
       type: params.type || 'guest-form',
       inspectionDate: params.inspection_date,
@@ -45,7 +46,10 @@ export class EmailService {
       signatureBase64: params.signatureBase64,
       termsAccepted: params.termsAccepted,
       diagramBase64: params.diagramBase64,
-      diagramPoints: []
+      diagramPoints: [],
+      
+      // Lista de administradores (separada de los datos del huésped)
+      adminEmails: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"]
     };
 
     // Seleccionar template avanzado según el tipo de evento
@@ -53,6 +57,15 @@ export class EmailService {
     if (emailData.type === 'guest-form') {
       // Correo inicial al guest
       emailContent = generarContenidoFormularioCreado(emailData);
+      
+      // Enviar también alerta a administradores
+      try {
+        const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
+        await this.sendAdminAlert(adminAlert);
+        console.log("Alerta a administradores enviada correctamente");
+      } catch (error) {
+        console.error("Error al enviar alerta a administradores:", error);
+      }
     } else if (emailData.type === 'completed-form') {
       if (params.isAdmin) {
         // Correo a administradores con PDF firmado
@@ -65,26 +78,6 @@ export class EmailService {
       // Fallback: alerta a administradores
       emailContent = generarContenidoAlertaFormularioCreado(emailData);
     }
-
-    console.log("Datos de email completos:", {
-      from: emailContent.from,
-      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
-      subject: emailContent.subject,
-      html: emailContent.html ? 'HTML presente' : 'Sin HTML'
-    });
-
-    console.log("Datos completos de emailContent:", {
-      from: emailContent.from,
-      to: emailContent.to,
-      subject: emailContent.subject,
-      htmlLength: emailContent.html ? emailContent.html.length : 0
-    });
-
-    console.log("Datos completos de emailData:", {
-      guestName: emailData.guestName,
-      guestEmail: emailData.guestEmail,
-      property: emailData.property
-    });
 
     // Datos para el correo
     const payload = {
@@ -135,15 +128,16 @@ export class EmailService {
   }
 
   private generateSubject(params: EmailServiceParams): string {
-    const baseSuffix = `Inspección de Carrito - ${params.property}`;
-    
-    if (params.type === 'guest-form') {
-      return `Formulario de Inspección Inicial: ${baseSuffix}`;
-    } else if (params.type === 'completed-form') {
-      return `Formulario de Inspección Completado: ${baseSuffix}`;
+    // Generar un asunto basado en los parámetros disponibles
+    if (params.subject) {
+      return params.subject;
     }
     
-    return `Inspección de Carrito: ${baseSuffix}`;
+    if (params.property) {
+      return `Golf Cart Inspection for ${params.property}`;
+    }
+    
+    return 'Golf Cart Inspection Form';
   }
 
   private generateFormLink(params: EmailServiceParams): string {
@@ -161,5 +155,95 @@ export class EmailService {
     }
     
     return `${baseUrl}/inspection`;
+  }
+
+  private async sendAdminAlert(emailContent: EmailContentParams) {
+    try {
+      // Verificar que hay destinatarios
+      if (!Array.isArray(emailContent.to) || emailContent.to.length === 0) {
+        console.warn("No hay destinatarios administrativos para enviar la alerta");
+        return;
+      }
+      
+      const payload = {
+        from: emailContent.from,
+        to: emailContent.to,
+        subject: emailContent.subject,
+        html: emailContent.html || '<p>No HTML content</p>'
+      };
+      
+      console.log("Enviando alerta a administradores:", emailContent.to);
+      
+      const response = await fetch(this.API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const responseBody = await response.text();
+      console.log("Respuesta de alerta a administradores:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error enviando alerta a administradores: ${responseBody || 'Sin detalles'}`);
+      }
+      
+      return responseBody ? JSON.parse(responseBody) : null;
+    } catch (error) {
+      console.error("Error detallado al enviar alerta a administradores:", error);
+      throw error;
+    }
+  }
+
+  // Método simplificado para enviar correos directamente
+  async sendDirectEmail(payload: {
+    from: string;
+    to: string | string[];
+    subject: string;
+    html: string;
+  }) {
+    try {
+      // Asegurar que 'to' sea una cadena
+      const to = Array.isArray(payload.to) ? payload.to.join(',') : payload.to;
+      
+      const emailPayload = {
+        from: payload.from,
+        to: to,
+        subject: payload.subject,
+        html: payload.html
+      };
+      
+      console.log("Enviando correo directo a:", to);
+      
+      const response = await fetch(this.API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailPayload)
+      });
+      
+      const responseText = await response.text();
+      console.log("Respuesta de correo directo:", {
+        status: response.status,
+        body: responseText
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error enviando correo directo: ${responseText}`);
+      }
+      
+      return responseText ? JSON.parse(responseText) : null;
+    } catch (error) {
+      console.error("Error en sendDirectEmail:", error);
+      throw error;
+    }
   }
 }

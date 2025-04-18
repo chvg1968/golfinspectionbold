@@ -59,21 +59,29 @@ export function generarContenidoFormularioCreado(
 export function generarContenidoAlertaFormularioCreado(
   data: EmailData
 ): EmailContentParams {
-  const { guestName, property, inspectionDate, adminEmails } = data;
+  const { guestName, guestEmail, property, inspectionDate, adminEmails } = data;
+  
+  // Lista predeterminada de administradores
+  const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
+  
+  // Usar adminEmails si existe, de lo contrario usar la lista predeterminada
+  const recipients = Array.isArray(adminEmails) && adminEmails.length > 0
+    ? adminEmails.filter((e): e is string => !!e)
+    : defaultAdmins;
+
+  console.log("Destinatarios de alerta a administradores:", recipients);
 
   return {
     from: "Luxe Properties <noreply@luxepropertiespr.com>",
-    to: Array.isArray(adminEmails)
-      ? adminEmails.filter((e): e is string => !!e)
-      : [],
+    to: recipients,
     subject: `Alert: New form has been created for ${property}`,
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h3>New inspection form created</h3>
         <p>A new inspection form has been created for the property <strong>${property}</strong>.</p>
         <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
-        <p><strong>Guest Email:</strong> ${data.guestEmail || "N/A"}</p>
-        <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
+        <p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
+        <p><strong>Inspection Date:</strong> ${inspectionDate || "N/A"}</p>
         <p style="margin-bottom: 10px;">To access the inspection form, copy and paste this link into your browser:</p>
         ${
           data.formLinkWithDomain || data.formLink
@@ -137,7 +145,7 @@ export function generarContenidoFormularioFirmado(
         </div>
         <p style="margin-top: 20px;">También puedes encontrar el PDF firmado adjunto a este correo.</p>
         <hr style="border: 1px solid #eee; margin: 20px 0;">
-        <p style="color: #666;">Golf Cart Inspection System</p>
+        <p style="color: #666;">Luxe Properties</p>
       </div>
     `,
     attachments:
@@ -184,22 +192,6 @@ export function generarContenidoConfirmacion(
           <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
           <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
         </div>
-        <div style="margin: 30px 0; text-align: center;">
-          ${pdfLink
-            ? `<a href='${pdfLink}' style='background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;'>Ver PDF firmado</a>`
-            : (data.formLinkWithDomain || data.formLink)
-            ? `<a href='${data.formLinkWithDomain || data.formLink}' style='background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;'>Revisar y Firmar Formulario</a>`
-            : `<span style='color: #e53e3e;'>No valid PDF or form link available. Please contact support.</span>`
-          }
-        </div>
-        <p style="margin-bottom: 10px;">If the button above doesn't work, copy and paste this link into your browser:</p>
-        ${
-          data.formLinkWithDomain || data.formLink
-            ? `<p style='margin-bottom: 20px; word-break: break-all; color: #4a5568;'>${
-                data.formLinkWithDomain || data.formLink
-              }</p>`
-            : `<p style='margin-bottom: 20px; color: #e53e3e;'>No valid inspection form link available. Please contact support.</p>`
-        }
         <p style="margin-top: 20px;">Thank you for your collaboration.</p>
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666;">Golf Cart Inspection System</p>

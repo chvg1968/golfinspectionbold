@@ -229,6 +229,62 @@ async function handleRequest(req: Request): Promise<Response> {
       }
     }
 
+    // Añadir un nuevo endpoint o parámetro para manejar específicamente alertas admin
+    if (data.type === 'admin-alert' || data.adminAlert) {
+      try {
+        // Usar directamente la plantilla de alerta admin
+        const adminEmailService = new EmailService(Deno.env.get('RESEND_API_KEY') || '');
+        const adminEmailData = {
+          ...data,
+          // Asegurar que los destinatarios sean los administradores
+          guestEmail: undefined, // No enviar al huésped
+          adminEmails: data.adminEmails || ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"]
+        };
+        
+        const adminContent = generarContenidoAlertaFormularioCreado(adminEmailData);
+        
+        // Enviar directamente sin pasar por la lógica compleja
+        const adminPayload = {
+          from: adminContent.from,
+          to: Array.isArray(adminContent.to) ? adminContent.to : [adminContent.to],
+          subject: adminContent.subject,
+          html: adminContent.html
+        };
+        
+        console.log("Enviando alerta directa a administradores:", adminPayload.to);
+        
+        const adminResult = await adminEmailService.sendDirectEmail(adminPayload);
+        
+        return new Response(
+          JSON.stringify({ 
+            message: "Alerta admin enviada exitosamente", 
+            result: adminResult || {} 
+          }), 
+          { 
+            status: 200,
+            headers: { 
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json',
+              'Vary': 'Origin'
+            } 
+          }
+        );
+      } catch (adminError) {
+        console.error("Error enviando alerta admin:", adminError);
+        return new Response(
+          JSON.stringify({ error: "Error enviando alerta admin", details: adminError.message }), 
+          { 
+            status: 500,
+            headers: { 
+              'Access-Control-Allow-Origin': origin,
+              'Content-Type': 'application/json',
+              'Vary': 'Origin'
+            } 
+          }
+        );
+      }
+    }
+
     // Enviar correo electrónico
     const emailService = new EmailService(Deno.env.get('RESEND_API_KEY') || '');
     try {
