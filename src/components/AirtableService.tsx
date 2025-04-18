@@ -123,61 +123,46 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
     }
 }
 
-export async function updateAirtablePdfLink(formId: string, pdfLink: string) {
-    // Validar variables de entorno
-    const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
-    const tableName = import.meta.env.VITE_AIRTABLE_TABLE_NAME;
-    const apiKey = import.meta.env.VITE_AIRTABLE_API_KEY;
-
-    if (!baseId || !tableName || !apiKey) {
-        throw new Error('Faltan variables de entorno de Airtable');
-    }
-
-    // Buscar el registro existente
-    const searchUrl = `https://api.airtable.com/v0/${baseId}/${tableName}?filterByFormula=${encodeURIComponent(`{Form Id}='${formId}'`)}`;
-    const searchResponse = await fetch(searchUrl, {
-        headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-        }
+export const updateAirtablePdfLink = async (inspectionId: string, pdfUrl: string) => {
+  try {
+    console.log(`Actualizando enlace PDF en Airtable para inspección ${inspectionId}`);
+    
+    // Buscar el registro en Airtable usando el ID de inspección
+    const response = await fetch(`${AIRTABLE_API_URL}/Inspections?filterByFormula=FIND("${inspectionId}",{InspectionID})`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
     });
-    const searchData = await searchResponse.json();
-
-    if (!searchData.records || searchData.records.length === 0) {
-        console.log('No se encontró registro para actualizar');
-        return null;
-    }
-
-    // Obtener el ID del primer registro encontrado
-    const recordId = searchData.records[0].id;
-
-    // Preparar datos para actualización
-    const updateData = {
-        fields: {
-            'PDF Link': pdfLink
-        }
-    };
-
-    // URL para actualizar el registro
-    const updateUrl = `https://api.airtable.com/v0/${baseId}/${tableName}/${recordId}`;
-
-    // Realizar actualización
-    const updateResponse = await fetch(updateUrl, {
+    
+    const data = await response.json();
+    
+    if (data.records && data.records.length > 0) {
+      const recordId = data.records[0].id;
+      
+      // Actualizar el registro con el enlace del PDF
+      await fetch(`${AIRTABLE_API_URL}/Inspections/${recordId}`, {
         method: 'PATCH',
         headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+          'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(updateData)
-    });
-
-    const updateResponseData = await updateResponse.json();
-
-    console.log('Actualización en Airtable:', {
-        success: updateResponse.ok,
-        recordId,
-        pdfLink
-    });
-
-    return updateResponseData;
+        body: JSON.stringify({
+          fields: {
+            'PDF Link': pdfUrl
+          }
+        })
+      });
+      
+      console.log('Enlace PDF actualizado en Airtable');
+      return true;
+    } else {
+      console.warn(`No se encontró registro en Airtable para la inspección ${inspectionId}`);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error al actualizar enlace PDF en Airtable:', error);
+    return false;
+  }
 }

@@ -82,14 +82,6 @@ export function generarContenidoAlertaFormularioCreado(
         <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
         <p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
         <p><strong>Inspection Date:</strong> ${inspectionDate || "N/A"}</p>
-        <p style="margin-bottom: 10px;">To access the inspection form, copy and paste this link into your browser:</p>
-        ${
-          data.formLinkWithDomain || data.formLink
-            ? `<p style='margin-bottom: 20px; word-break: break-all; color: #4a5568;'>${
-                data.formLinkWithDomain || data.formLink
-              }</p>`
-            : `<p style='margin-bottom: 20px; color: #e53e3e;'>No valid inspection form link available. Please contact support.</p>`
-        }
       </div>
     `,
   };
