@@ -380,6 +380,24 @@ function InspectionForm() {
               diagram_points: safePoints,
             });
           })(),
+          // NUEVO: Correo directo a los administradores (alerta de creación)
+          // Usando el mismo patrón que funciona para los formularios firmados
+          sendFormEmail('alert', {
+            to_email: 'hernancalendar01@gmail.com', // Correo principal de administrador
+            to_name: 'Administrador',
+            from_name: 'Golf Cart Inspection System',
+            from_email: 'no-reply@email.golfcartinspection.app',
+            property: formData.property,
+            cart_type: formData.cartType,
+            cart_number: formData.cartNumber,
+            inspection_date: formData.inspectionDate,
+            guestName: formData.guestName,
+            guestEmail: formData.guestEmail,
+            form_link: `${window.location.origin}/inspection/${inspection.id}`,
+            formLinkWithDomain: `${window.location.origin}/inspection/${inspection.id}`,
+            isAdmin: true,
+            isCreationAlert: true // Nuevo flag para diferenciar
+          }),
           sendToAirtable({
             guestName: formData.guestName,
             inspectionDate: formData.inspectionDate,
@@ -476,60 +494,83 @@ function InspectionForm() {
           console.error('Error actualizando PDF en Airtable:', updateError);
         }
 
-        // Enviar email de confirmación
-        await Promise.all([
-          sendFormEmail('completed-form', {
-            to_email: formData.guestEmail,
-            to_name: formData.guestName,
-            from_name: 'Golf Cart Inspection System',
-            from_email: 'no-reply@email.golfcartinspection.app',
-            property: formData.property,
-            cart_type: formData.cartType,
-            cart_number: formData.cartNumber,
-            inspection_date: formData.inspectionDate,
-            observations: formData.observations,
-            pdf_attachment: pdfUrl,
-            formId: formId,
-            form_link: formLink
-          }),
-          // Enviar copia al administrador
-          sendFormEmail('completed-form', {
-            to_email: 'hernancalendar01@gmail.com',
-            to_name: 'Administrador',
-            from_name: 'Golf Cart Inspection System',
-            from_email: 'no-reply@email.golfcartinspection.app',
-            property: formData.property,
-            cart_type: formData.cartType,
-            cart_number: formData.cartNumber,
-            inspection_date: formData.inspectionDate,
-            observations: formData.observations,
-            form_link: pdfUrl,
-            // Indicar que es un correo para el administrador
-            isAdmin: true
-          })
-        ]);
+        // Cuando se firma un formulario (vista de invitado)
+        if (isGuestView) {
+          // Actualizar inspección existente
+          const { error } = await supabase
+            .from('inspections')
+            .update({
+              observations: formData.observations,
+              signature_data: signaturePadRef.current?.toDataURL(),
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', id);
 
-        // Descargar versión local
-        try {
+          if (error) throw error;
+
+          // Ya que form_id no existe en la tabla, generamos un ID único para el PDF
+          const uniqueId = `${id}-${Date.now()}`;
+          const pdfFileName = `${formData.property}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+          
+          // Restaurar la funcionalidad de descarga del PDF
           if (pdfData && pdfData.download && pdfData.download.blob) {
-            const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = pdfFileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(downloadUrl);
-          } else {
-            throw new Error('PDF data is not available for download');
+            try {
+              const downloadUrl = window.URL.createObjectURL(pdfData.download.blob);
+              const link = document.createElement('a');
+              link.href = downloadUrl;
+              link.download = pdfFileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(downloadUrl);
+              console.log('PDF descargado correctamente');
+            } catch (downloadError) {
+              console.error('Error al descargar PDF:', downloadError);
+            }
           }
-        } catch (downloadError) {
-          console.error('Error downloading PDF:', downloadError);
-          alert('Error downloading PDF. Please try again.');
-        }
 
-        setNotification({ type: 'success', message: '¡Formulario enviado exitosamente!' });
-        navigate('/thank-you');
+          // Actualizar el enlace del PDF en Airtable - usando el ID de inspección como identificador
+          try {
+            await updateAirtablePdfLink(id, pdfUrl);
+          } catch (updateError) {
+            console.error('Error actualizando PDF en Airtable:', updateError);
+          }
+
+          // Enviar correos
+          await Promise.all([
+            // Correo de confirmación al huésped
+            sendFormEmail('completed-form', {
+              to_email: formData.guestEmail,
+              to_name: formData.guestName,
+              from_name: 'Golf Cart Inspection System',
+              from_email: 'no-reply@email.golfcartinspection.app',
+              property: formData.property,
+              inspection_date: formData.inspectionDate,
+              pdf_attachment: pdfUrl,
+              isAdmin: false // Indicar que es para el huésped
+            }),
+            // Correo a los administradores con el PDF
+            sendFormEmail('completed-form', {
+              to_email: 'hernancalendar01@gmail.com', // Correo principal de administrador
+              to_name: 'Administrador',
+              from_name: 'Golf Cart Inspection System',
+              from_email: 'no-reply@email.golfcartinspection.app',
+              property: formData.property,
+              cart_type: formData.cartType,
+              cart_number: formData.cartNumber,
+              inspection_date: formData.inspectionDate,
+              guestName: formData.guestName,
+              guestEmail: formData.guestEmail,
+              observations: formData.observations,
+              form_id: id, // Usar el ID de inspección en lugar de form_id
+              pdf_attachment: pdfUrl, // Aseguramos que el PDF se adjunte
+              isAdmin: true // Indicar que es para administradores
+            })
+          ]);
+
+          navigate('/thank-you');
+        }
       }
     } catch (error) {
       console.error('Error submitting form:', error);
