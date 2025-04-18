@@ -6,10 +6,13 @@ export interface EmailData {
   type?: 'guest-form' | 'completed-form';
   inspectionDate?: string;
   formLink?: string;
+  formLinkWithDomain?: string;
   formId?: string;
   replyTo?: string;
   subject?: string;
   pdfBase64?: string;
+  pdf_attachment?: string;
+  pdfUrl?: string;
   cartType?: string;
   cartNumber?: string;
   observations?: string;
@@ -22,6 +25,7 @@ export interface EmailData {
     color: string;
     size?: number;
   }>;
+  adminEmails?: string[];
 }
 
 export interface InspectionData {

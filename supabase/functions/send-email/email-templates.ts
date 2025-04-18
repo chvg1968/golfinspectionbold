@@ -1,146 +1,209 @@
-import { EmailData, EmailServiceParams } from "./types.ts";
-import { getGuestFormEmailContent, getCompletedFormEmailContent } from "./email-templates.ts";
+import { EmailData, EmailContentParams } from "./types.ts";
 
-export class EmailService {
-  private API_ENDPOINT = "https://api.resend.com/emails";
-  private apiKey: string;
+// Las funciones avanzadas de template de email están exportadas al final de este archivo:
+// - generarContenidoFormularioCreado
+// - generarContenidoAlertaFormularioCreado
+// - generarContenidoFormularioFirmado
+// - generarContenidoConfirmacion
+// Puedes importarlas desde otros módulos según el evento de email que necesites.
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
 
-  async sendEmail(params: EmailServiceParams) {
-    console.log("Datos completos para envío de correo:", {
-      guestName: params.to_name,
-      guestEmail: params.to_email,
-      property: params.property,
-      pdfBase64: params.pdf_attachment ? 'Base64 presente' : 'Base64 ausente'
-    });
+// Función generadora para el evento FORMULARIO_CREADO (correo inicial al guest)
+export function generarContenidoFormularioCreado(
+  data: EmailData
+): EmailContentParams {
+  // Plantilla personalizada para el primer correo al guest (UNIFICADA)
+  const { guestName, guestEmail, property, inspectionDate, formLinkWithDomain, formLink } = data;
 
-    // Preparar datos del correo
-    const emailData: EmailData = {
-      guestName: params.to_name || '',
-      guestEmail: params.to_email || '',
-      property: params.property,
-      type: params.type || 'guest-form',
-      inspectionDate: params.inspection_date,
-      formLink: params.form_link || this.generateFormLink(params),
-      formId: params.formId,
-      replyTo: params.reply_to,
-      subject: params.subject || this.generateSubject(params),
-      pdfBase64: params.pdf_attachment,
-      
-      // Campos adicionales de inspección
-      cartType: params.cart_type,
-      cartNumber: params.cart_number,
-      observations: params.observations,
-      
-      // Campos de firma y términos
-      signatureBase64: params.signatureBase64,
-      termsAccepted: params.termsAccepted,
-      diagramBase64: params.diagramBase64,
-      diagramPoints: []
-    };
+  return {
+    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    to: [guestEmail!],
+    subject: `Golf Cart Inspection Form for ${property}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
+        <h2 style="color: #2c5282; margin-bottom: 20px;">Golf Cart Inspection Form</h2>
+        <p style="margin-bottom: 15px;">Dear ${guestName},</p>
+        <p style="margin-bottom: 20px;">An inspection form has been created for the golf cart at ${property}. Please complete this form at your earliest convenience.</p>
+        <p style="margin-bottom: 20px;">For a better experience in mobile devices, please rotate your device to landscape mode.</p>
+        <div style="margin: 30px 0; text-align: center;">
+          ${
+            formLinkWithDomain || formLink
+              ? `<a href='${
+                  formLinkWithDomain || formLink
+                }' style='background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;'>Review and Sign Form</a>`
+              : `<span style='color: #e53e3e;'>No valid inspection form link available. Please contact support.</span>`
+          }
+        </div>
+        <p style="margin-bottom: 10px;">If the button above doesn't work, copy and paste this link into your browser:</p>
+        ${
+          formLinkWithDomain || formLink
+            ? `<p style='margin-bottom: 20px; word-break: break-all; color: #4a5568;'>${
+                formLinkWithDomain || formLink
+              }</p>`
+            : ''
+        }
+        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+          <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
+          <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
+        </div>
+        <p style="color: #666; margin-bottom: 20px;">If you have any questions, please reply to this email.</p>
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #666;">Best regards,<br>Luxe Properties</p>
+      </div>
+    `,
+  };
+}
 
-    // Seleccionar template según el tipo de correo
-    const emailContent = emailData.type === 'guest-form'
-      ? getGuestFormEmailContent(emailData)
-      : getCompletedFormEmailContent(emailData, params.isAdmin);
+// Plantilla de alerta para administradores cuando se crea un formulario
+export function generarContenidoAlertaFormularioCreado(
+  data: EmailData
+): EmailContentParams {
+  const { guestName, property, inspectionDate, adminEmails } = data;
 
-    console.log("Datos de email completos:", {
-      from: emailContent.from,
-      to: Array.isArray(emailContent.to) ? emailContent.to[0] : emailContent.to,
-      subject: emailContent.subject,
-      html: emailContent.html ? 'HTML presente' : 'Sin HTML'
-    });
+  return {
+    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    to: Array.isArray(adminEmails)
+      ? adminEmails.filter((e): e is string => !!e)
+      : [],
+    subject: `Alert: New form has been created for ${property}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h3>New inspection form created</h3>
+        <p>A new inspection form has been created for the property <strong>${property}</strong>.</p>
+        <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
+        <p><strong>Guest Email:</strong> ${data.guestEmail || "N/A"}</p>
+        <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
+        <p style="margin-bottom: 10px;">To access the inspection form, copy and paste this link into your browser:</p>
+        ${
+          data.formLinkWithDomain || data.formLink
+            ? `<p style='margin-bottom: 20px; word-break: break-all; color: #4a5568;'>${
+                data.formLinkWithDomain || data.formLink
+              }</p>`
+            : `<p style='margin-bottom: 20px; color: #e53e3e;'>No valid inspection form link available. Please contact support.</p>`
+        }
+      </div>
+    `,
+  };
+}
 
-    console.log("Datos completos de emailContent:", {
-      from: emailContent.from,
-      to: emailContent.to,
-      subject: emailContent.subject,
-      htmlLength: emailContent.html ? emailContent.html.length : 0
-    });
+// Función generadora para el evento FORMULARIO_FIRMADO (correo a administradores con PDF)
+export function generarContenidoFormularioFirmado(
+  data: EmailData
+): EmailContentParams {
+  const {
+    guestName,
+    guestEmail,
+    property,
+    cartType,
+    cartNumber,
+    observations,
+    formId,
+  } = data;
+  // Priorizar pdf_attachment (Supabase pdfs bucket), si no existe usar pdfUrl
 
-    console.log("Datos completos de emailData:", {
-      guestName: emailData.guestName,
-      guestEmail: emailData.guestEmail,
-      property: emailData.property
-    });
+  // Construir URL de Supabase PDFs bucket si no existe
+  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw'; // Reemplazar con variable de entorno
+  const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const pdfLink = data.pdf_attachment || 
+    (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
 
-    // Datos para el correo
-    const payload = {
-      from: 'Luxe Properties <noreply@luxepropertiespr.com>',
-      to: emailData.guestEmail ? 
-        `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` : 
-        'hernancalendar01@gmail.com',
-      subject: emailContent.subject,
-      html: emailContent.html || '<p>No HTML content</p>',
-      // Eliminar adjuntos de PDF
-      attachments: undefined
-    };
+  return {
+    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    to: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"].filter(
+      (e): e is string => !!e
+    ),
+    subject: `Inspection Form Signed - ${property}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Form Signed</h2>
+        <p>The guest <strong>${guestName}</strong> (${guestEmail}) has signed and completed the inspection form for <strong>${property}</strong>.</p>
+        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+          <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
+<p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
+<p><strong>Inspection Date:</strong> ${data.inspectionDate || "N/A"}</p>
+<p><strong>Property:</strong> ${property}</p>
+          <p><strong>Cart Type:</strong> ${cartType}</p>
+          <p><strong>Cart Number:</strong> ${cartNumber}</p>
+          <p><strong>Observations:</strong> ${
+            observations || "No observations provided"
+          }</p>
+        </div>
+        <div style="margin: 30px 0; text-align: center;">
+          ${pdfLink
+            ? `<a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Descargar PDF firmado</a>`
+            : `<span style='color: #e53e3e;'>No valid PDF link available. Please contact support.</span>`
+          }
+        </div>
+        <p style="margin-top: 20px;">También puedes encontrar el PDF firmado adjunto a este correo.</p>
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #666;">Golf Cart Inspection System</p>
+      </div>
+    `,
+    attachments:
+      typeof data.pdf_attachment === "string" && data.pdf_attachment
+        ? [
+            {
+              filename: `inspection_${formId || "signed"}.pdf`,
+              content: data.pdf_attachment,
+            },
+          ]
+        : typeof data.pdfUrl === "string" && data.pdfUrl
+        ? [
+            {
+              filename: `inspection_${formId || "signed"}.pdf`,
+              content: data.pdfUrl,
+            },
+          ]
+        : undefined,
+  };
+}
 
-    console.log("Enviando correo con payload:", JSON.stringify(payload, null, 2));
+// Función generadora para el evento CONFIRMACION (correo al guest confirmando que firmó)
+export function generarContenidoConfirmacion(
+  data: EmailData
+): EmailContentParams {
+  const { guestName, guestEmail, property, inspectionDate, formId } = data;
 
-    // Enviar correo
-    let responseBody: string | null = null;
-    try {
-      const response = await fetch(this.API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+  // Construir URL de Supabase PDFs bucket si no existe
+  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw'; // Reemplazar con variable de entorno
+  const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const pdfLink = data.pdf_attachment || 
+    (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
 
-      responseBody = await response.text();
-      console.log("Respuesta completa de Resend:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error en el envío: ${responseBody || 'Sin detalles'}`);
-      }
-
-      return responseBody ? JSON.parse(responseBody) : null;
-    } catch (error) {
-      console.error("Error detallado al enviar correo:", {
-        message: error.message,
-        payload: payload,
-        responseBody: responseBody || 'Sin respuesta'
-      });
-      throw error;
-    }
-  }
-
-  private generateSubject(params: EmailServiceParams): string {
-    const baseSuffix = `Inspección de Carrito - ${params.property}`;
-    
-    if (params.type === 'guest-form') {
-      return `Formulario de Inspección Inicial: ${baseSuffix}`;
-    } else if (params.type === 'completed-form') {
-      return `Formulario de Inspección Completado: ${baseSuffix}`;
-    }
-    
-    return `Inspección de Carrito: ${baseSuffix}`;
-  }
-
-  private generateFormLink(params: EmailServiceParams): string {
-    // Generar un link basado en los parámetros disponibles
-    const baseUrl = 'https://golf-cart-inspection.netlify.app';
-    
-    if (params.formId) {
-      return `${baseUrl}/inspection/${params.formId}`;
-    }
-    
-    if (params.to_name && params.property) {
-      const sluggedName = params.to_name.toLowerCase().replace(/\s+/g, '-');
-      const sluggedProperty = params.property.toLowerCase().replace(/\s+/g, '-');
-      return `${baseUrl}/inspection/${sluggedName}-${sluggedProperty}-${Date.now()}`;
-    }
-    
-    return `${baseUrl}/inspection`;
-  }
+  return {
+    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    to: [guestEmail!],
+    subject: `Golf Cart Inspection Completed for ${property}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
+        <p style="margin-bottom: 15px;">Dear ${guestName},</p>
+        <p style="margin-bottom: 20px;">Thank you for completing the inspection form for the golf cart at ${property}. Your submission has been received.</p>
+        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+          <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
+          <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
+        </div>
+        <div style="margin: 30px 0; text-align: center;">
+          ${pdfLink
+            ? `<a href='${pdfLink}' style='background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;'>Ver PDF firmado</a>`
+            : (data.formLinkWithDomain || data.formLink)
+            ? `<a href='${data.formLinkWithDomain || data.formLink}' style='background-color: #4CAF50; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;'>Revisar y Firmar Formulario</a>`
+            : `<span style='color: #e53e3e;'>No valid PDF or form link available. Please contact support.</span>`
+          }
+        </div>
+        <p style="margin-bottom: 10px;">If the button above doesn't work, copy and paste this link into your browser:</p>
+        ${
+          data.formLinkWithDomain || data.formLink
+            ? `<p style='margin-bottom: 20px; word-break: break-all; color: #4a5568;'>${
+                data.formLinkWithDomain || data.formLink
+              }</p>`
+            : `<p style='margin-bottom: 20px; color: #e53e3e;'>No valid inspection form link available. Please contact support.</p>`
+        }
+        <p style="margin-top: 20px;">Thank you for your collaboration.</p>
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #666;">Golf Cart Inspection System</p>
+      </div>
+    `,
+  };
 }

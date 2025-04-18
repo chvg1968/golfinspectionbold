@@ -1,5 +1,11 @@
 import { EmailData, EmailServiceParams } from "./types.ts";
-import { getGuestFormEmailContent, getCompletedFormEmailContent } from "./email-templates.ts";
+import {
+  generarContenidoFormularioCreado,
+  generarContenidoAlertaFormularioCreado,
+  generarContenidoFormularioFirmado,
+  generarContenidoConfirmacion
+} from "./email-templates.ts";
+
 
 export class EmailService {
   private API_ENDPOINT = "https://api.resend.com/emails";
@@ -42,10 +48,23 @@ export class EmailService {
       diagramPoints: []
     };
 
-    // Seleccionar template según el tipo de correo
-    const emailContent = emailData.type === 'guest-form'
-      ? getGuestFormEmailContent(emailData)
-      : getCompletedFormEmailContent(emailData, params.isAdmin);
+    // Seleccionar template avanzado según el tipo de evento
+    let emailContent;
+    if (emailData.type === 'guest-form') {
+      // Correo inicial al guest
+      emailContent = generarContenidoFormularioCreado(emailData);
+    } else if (emailData.type === 'completed-form') {
+      if (params.isAdmin) {
+        // Correo a administradores con PDF firmado
+        emailContent = generarContenidoFormularioFirmado(emailData);
+      } else {
+        // Confirmación al guest
+        emailContent = generarContenidoConfirmacion(emailData);
+      }
+    } else {
+      // Fallback: alerta a administradores
+      emailContent = generarContenidoAlertaFormularioCreado(emailData);
+    }
 
     console.log("Datos de email completos:", {
       from: emailContent.from,
