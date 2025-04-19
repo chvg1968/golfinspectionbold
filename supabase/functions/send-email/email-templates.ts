@@ -112,7 +112,7 @@ export function generarContenidoFormularioFirmado(
 
   return {
     from: "Luxe Properties <noreply@luxepropertiespr.com>",
-    to: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"].filter(
+    to: ["conradovilla@hotmail.com","luxeprbahia@gmail.com"].filter(
       (e): e is string => !!e
     ),
     subject: `Inspection Form Signed - ${property}`,
@@ -199,7 +199,7 @@ export function generarContenidoConfirmacion(
     
     return {
       from: "Luxe Properties <noreply@luxepropertiespr.com>",
-      to: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"],
+      to: ["conradovilla@hotmail.com", "luxeprbahia@gmail.com"],
       subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
