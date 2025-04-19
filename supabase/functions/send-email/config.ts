@@ -10,7 +10,7 @@ export const FORM_CREATED_ADMIN_EMAILS = [
 
 // Lista para notificaciones de formulario completado/firmado
 export const FORM_COMPLETED_ADMIN_EMAILS = [
-  "hernancalendar01@gmail.com",
+  "conradovilla@hotmail.com",
   "luxeprbahia@gmail.com"
 ];
 

@@ -550,18 +550,16 @@ function InspectionForm() {
 
             // Correo a administradores (con PDF)
             sendFormEmail('completed-form', {
-              to_email: 'hernancalendar01@gmail.com', // Este valor será ignorado ya que isAdmin=true
-              to_name: 'Administrador',
+              to_email: formData.guestEmail, // Usar el email del huésped real
+              to_name: formData.guestName, // Usar el nombre del huésped real
               from_name: 'Golf Cart Inspection System',
               from_email: 'no-reply@email.golfcartinspection.app',
               property: formData.property,
               cart_type: formData.cartType,
               cart_number: formData.cartNumber,
               inspection_date: formData.inspectionDate,
-              guestName: formData.guestName,
-              guestEmail: formData.guestEmail,
               observations: formData.observations,
-              form_id: id,
+              formId: id,
               pdf_attachment: pdfUrl, // Incluir URL del PDF para administradores
               isAdmin: true, // Correo a administradores
               skipAdminAlert: true // Evitar envío duplicado de alertas

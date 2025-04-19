@@ -107,49 +107,74 @@ export function generarContenidoFormularioFirmado(
     formId,
   } = data;
 
+  // Verificar que tenemos datos válidos del huésped
+  if (!guestName || !guestEmail) {
+    console.warn("Datos de huésped incompletos en generarContenidoFormularioFirmado:", { guestName, guestEmail });
+  }
+
   // Construir URL de Supabase PDFs bucket
   const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
-  const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const dateStr = new Date().toISOString().split('T')[0];
+  const pdfFileName = `rental_${formId}_${dateStr}.pdf`;
 
-  // Priorizar pdf_attachment (si existe), luego construir URL de Supabase
-  const pdfLink = data.pdf_attachment ||
-    (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
+  // Determinar la URL del PDF
+  // 1. Usar pdf_attachment si es una URL
+  // 2. Usar pdfUrl si existe
+  // 3. Construir URL basada en formId
+  let pdfLink = (data.pdf_attachment && data.pdf_attachment.startsWith('http')) ?
+                data.pdf_attachment :
+                data.pdfUrl ||
+                (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : null);
+
+  console.log("URL del PDF para correo a administradores:", pdfLink);
+  console.log("Datos del huésped para correo a administradores:", { guestName, guestEmail });
 
   return {
     from: getDefaultSender(),
     to: getFormCompletedAdminEmails(),
-    subject: `Inspection Form Signed - ${property}`,
+    subject: `Golf Cart Inspection Completed - ${property}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Form Signed</h2>
-        <p>The guest <strong>${guestName}</strong> (${guestEmail}) has signed and completed the inspection form for <strong>${property}</strong>.</p>
+        <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
+        <h2 style="color: #2c5282; margin-bottom: 20px;">Golf Cart Inspection Completed</h2>
+
+        <p>A guest has completed and signed a golf cart inspection form. Details below:</p>
+
         <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
-          <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
-          <p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
-          <p><strong>Inspection Date:</strong> ${data.inspectionDate || "N/A"}</p>
-          <p><strong>Property:</strong> ${property}</p>
-          <p><strong>Cart Type:</strong> ${cartType}</p>
-          <p><strong>Cart Number:</strong> ${cartNumber}</p>
-          <p><strong>Observations:</strong> ${
-            observations || "No observations provided"
-          }</p>
+          <p><strong>Guest Information:</strong></p>
+          <p style="margin-left: 15px;"><strong>Name:</strong> ${guestName || "N/A"}</p>
+          <p style="margin-left: 15px;"><strong>Email:</strong> ${guestEmail || "N/A"}</p>
+
+          <p style="margin-top: 15px;"><strong>Inspection Details:</strong></p>
+          <p style="margin-left: 15px;"><strong>Property:</strong> ${property || "N/A"}</p>
+          <p style="margin-left: 15px;"><strong>Date:</strong> ${data.inspectionDate || "N/A"}</p>
+          <p style="margin-left: 15px;"><strong>Cart Type:</strong> ${cartType || "N/A"}</p>
+          <p style="margin-left: 15px;"><strong>Cart Number:</strong> ${cartNumber || "N/A"}</p>
+
+          <p style="margin-top: 15px;"><strong>Guest Observations:</strong></p>
+          <p style="margin-left: 15px;">${observations || "No observations provided"}</p>
         </div>
+
         <div style="margin: 30px 0; text-align: center;">
           ${pdfLink
-            ? `<a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Descargar PDF firmado</a>`
-            : `<span style='color: #e53e3e;'>No valid PDF link available. Please contact support.</span>`
+            ? `<a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Signed PDF</a>`
+            : `<span style='color: #e53e3e;'>PDF link not available. Please check the system.</span>`
           }
         </div>
-        <p style="margin-top: 20px;">También puedes encontrar el PDF firmado adjunto a este correo.</p>
+
+        ${pdfLink ? `<p style="margin-top: 20px; text-align: center;">If the button doesn't work, copy this link: <a href="${pdfLink}">${pdfLink}</a></p>` : ''}
+
+        <p style="margin-top: 20px;">The PDF is also attached to this email for your convenience.</p>
+
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666;">Luxe Properties</p>
       </div>
     `,
     attachments:
-      typeof data.pdf_attachment === "string" && data.pdf_attachment
+      typeof data.pdf_attachment === "string" && data.pdf_attachment && !data.pdf_attachment.startsWith('http')
         ? [
             {
-              filename: `inspection_${formId || "signed"}.pdf`,
+              filename: `${property || 'property'}_${guestName || 'guest'}_inspection.pdf`,
               content: data.pdf_attachment,
             },
           ]
