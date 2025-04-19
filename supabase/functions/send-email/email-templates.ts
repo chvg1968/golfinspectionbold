@@ -1,11 +1,9 @@
 
 import { EmailData, EmailContentParams} from "./types.ts";
 import {
-  getAdminEmails,
   getDefaultSender,
   getFormCreatedAdminEmails,
-  getFormCompletedAdminEmails,
-  URLS
+  getFormCompletedAdminEmails
 } from "./config.ts";
 
 // Las funciones avanzadas de template de email están exportadas al final de este archivo:
@@ -104,30 +102,12 @@ export function generarContenidoFormularioFirmado(
     cartType,
     cartNumber,
     observations,
-    formId,
   } = data;
 
   // Verificar que tenemos datos válidos del huésped
   if (!guestName || !guestEmail) {
     console.warn("Datos de huésped incompletos en generarContenidoFormularioFirmado:", { guestName, guestEmail });
   }
-
-  // Construir URL de Supabase PDFs bucket
-  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
-  const dateStr = new Date().toISOString().split('T')[0];
-  const pdfFileName = `rental_${formId}_${dateStr}.pdf`;
-
-  // Determinar la URL del PDF
-  // 1. Usar pdf_attachment si es una URL
-  // 2. Usar pdfUrl si existe
-  // 3. Construir URL basada en formId
-  let pdfLink = (data.pdf_attachment && data.pdf_attachment.startsWith('http')) ?
-                data.pdf_attachment :
-                data.pdfUrl ||
-                (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : null);
-
-  console.log("URL del PDF para correo a administradores:", pdfLink);
-  console.log("Datos del huésped para correo a administradores:", { guestName, guestEmail });
 
   return {
     from: getDefaultSender(),
@@ -154,31 +134,9 @@ export function generarContenidoFormularioFirmado(
           <p style="margin-top: 15px;"><strong>Guest Observations:</strong></p>
           <p style="margin-left: 15px;">${observations || "No observations provided"}</p>
         </div>
-
-        <div style="margin: 30px 0; text-align: center;">
-          ${pdfLink
-            ? `<a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Signed PDF</a>`
-            : `<span style='color: #e53e3e;'>PDF link not available. Please check the system.</span>`
-          }
-        </div>
-
-        ${pdfLink ? `<p style="margin-top: 20px; text-align: center;">If the button doesn't work, copy this link: <a href="${pdfLink}">${pdfLink}</a></p>` : ''}
-
-        <p style="margin-top: 20px;">The PDF is also attached to this email for your convenience.</p>
-
-        <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666;">Luxe Properties</p>
       </div>
     `,
-    attachments:
-      typeof data.pdf_attachment === "string" && data.pdf_attachment && !data.pdf_attachment.startsWith('http')
-        ? [
-            {
-              filename: `${property || 'property'}_${guestName || 'guest'}_inspection.pdf`,
-              content: data.pdf_attachment,
-            },
-          ]
-        : undefined,
   };
 }
 
@@ -186,7 +144,7 @@ export function generarContenidoFormularioFirmado(
 export function generarContenidoConfirmacion(
   data: EmailData
 ): EmailContentParams {
-  const { guestName, guestEmail, property, inspectionDate, formId } = data;
+  const { guestName, guestEmail, property, inspectionDate} = data;
   const isAdmin = !!data.isAdmin; // Convertir a booleano explícito
 
   // Si NO es admin (es guest), enviar correo sin enlace al PDF
