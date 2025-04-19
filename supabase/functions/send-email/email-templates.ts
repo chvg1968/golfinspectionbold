@@ -158,7 +158,7 @@ export function generarContenidoFormularioFirmado(
 export function generarContenidoConfirmacion(
   data: EmailData
 ): EmailContentParams {
-  const { guestName, guestEmail, property, inspectionDate } = data;
+  const { guestName, guestEmail, property, inspectionDate, formId } = data;
   const isAdmin = !!data.isAdmin; // Convertir a booleano explícito
 
   // Si NO es admin (es guest), enviar correo sin enlace al PDF
@@ -185,7 +185,17 @@ export function generarContenidoConfirmacion(
     };
   } else {
     // Si es admin, incluir enlace al PDF
-    const pdfLink = data.pdf_attachment || data.pdfUrl;
+    // Priorizar los enlaces en este orden: pdf_attachment, pdfUrl, o construir uno basado en formId
+    const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
+    let pdfLink = data.pdf_attachment || data.pdfUrl;
+    
+    // Si no hay enlace pero tenemos formId, construir el enlace
+    if (!pdfLink && formId) {
+      // Usar el formato del enlace que proporcionaste como ejemplo
+      const fileName = formId.replace(/\s+/g, '_').toLowerCase();
+      const dateStr = inspectionDate ? new Date(inspectionDate).toISOString().split('T')[0].replace(/-/g, '_') : '';
+      pdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${fileName}_${dateStr}.pdf`;
+    }
     
     return {
       from: "Luxe Properties <noreply@luxepropertiespr.com>",
