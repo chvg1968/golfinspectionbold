@@ -59,6 +59,23 @@ export async function saveDiagramMarks(diagramName: string, points: Point[]): Pr
 
 export async function uploadPDF(pdfBlob: Blob, filename: string): Promise<string | null> {
   try {
+    console.log(`Starting PDF upload: ${filename}, size: ${pdfBlob.size} bytes`);
+    
+    // Verificar que el blob no esté vacío
+    if (!pdfBlob || pdfBlob.size === 0) {
+      console.error('PDF blob is empty or invalid');
+      return null;
+    }
+    
+    // Eliminar cualquier archivo existente con el mismo nombre para evitar duplicados
+    try {
+      await supabase.storage.from('pdfs').remove([filename]);
+      console.log(`Removed existing PDF with filename: ${filename}`);
+    } catch (removeError) {
+      console.log(`No existing PDF found or error removing: ${removeError}`);
+    }
+    
+    // Subir el nuevo archivo
     const { error } = await supabase
       .storage
       .from('pdfs')
@@ -67,16 +84,21 @@ export async function uploadPDF(pdfBlob: Blob, filename: string): Promise<string
         upsert: true
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error uploading PDF:', error);
+      throw error;
+    }
 
+    // Obtener la URL pública
     const { data: urlData } = supabase
       .storage
       .from('pdfs')
       .getPublicUrl(filename);
-
+      
+    console.log(`PDF uploaded successfully. Public URL: ${urlData.publicUrl}`);
     return urlData.publicUrl;
   } catch (error) {
-    console.error('Error uploading PDF:', error);
+    console.error('Error in uploadPDF function:', error);
     return null;
   }
 }

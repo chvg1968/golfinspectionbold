@@ -297,16 +297,22 @@ function InspectionForm() {
 
       // Generar PDF
       const pdfData = await generateFormPDF({
-        contentRef: formContentRef
+        contentRef: formContentRef,
+        waitForComplete: true // Asegurarse de que el PDF esté completo
       }) as PDFResult | null;
-      
+
       if (!pdfData) {
         throw new Error('Failed to generate PDF');
       }
 
-      // Subir PDF a Supabase
+      // Subir PDF a Supabase - asegurarse de que el blob esté completo
       const pdfBlob = pdfData.download.blob;
+      if (!pdfBlob || pdfBlob.size === 0) {
+        throw new Error('PDF blob is empty or invalid');
+      }
+
       const pdfFilename = `${formData.property.toLowerCase().replace(/\s+/g, '_')}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${formData.inspectionDate.replace(/-/g, '_')}.pdf`;
+      console.log(`Uploading PDF with filename: ${pdfFilename} and size: ${pdfBlob.size} bytes`);
       const pdfUrl = await uploadPDF(pdfBlob, pdfFilename);
 
       if (!pdfUrl) {

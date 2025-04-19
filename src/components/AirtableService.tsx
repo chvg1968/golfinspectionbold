@@ -17,6 +17,16 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         console.log('No hay PDF firmado, no se envía a Airtable');
         return null;
     }
+    
+    console.log(`Enviando a Airtable con PDF link: ${pdfLink}`);
+
+    // Validar que el pdfLink sea una URL válida
+    try {
+        new URL(pdfLink);
+    } catch (e) {
+        console.error(`El pdfLink no es una URL válida: ${pdfLink}`);
+        return null;
+    }
 
     // Validar variables de entorno
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -51,12 +61,19 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         let finalPdfLink = pdfLink;
         
         // Si el pdfLink parece ser un ID o path relativo, construir la URL completa
-        if (formData.formId && !pdfLink.startsWith('http')) {
+        if (!pdfLink.startsWith('http')) {
             const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
-            // Construir el nombre del archivo según el formato correcto
             const pdfFileName = `${formData.property.toLowerCase().replace(/\s+/g, '_')}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${formData.inspectionDate.replace(/-/g, '_')}.pdf`;
             finalPdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}`;
             console.log('Construyendo URL completa para PDF:', finalPdfLink);
+        }
+
+        // Verificar que finalPdfLink sea una URL válida
+        try {
+            new URL(finalPdfLink);
+        } catch (e) {
+            console.error(`El finalPdfLink no es una URL válida: ${finalPdfLink}`);
+            return null;
         }
 
         const fields: AirtableFields = {
@@ -138,7 +155,15 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
 
 export const updateAirtablePdfLink = async (inspectionId: string, pdfUrl: string) => {
   try {
-    console.log(`Actualizando enlace PDF en Airtable para inspección ${inspectionId}`);
+    console.log(`Actualizando enlace PDF en Airtable para inspección ${inspectionId} con URL: ${pdfUrl}`);
+    
+    // Validar que pdfUrl sea una URL válida
+    try {
+        new URL(pdfUrl);
+    } catch (e) {
+        console.error(`La URL del PDF no es válida: ${pdfUrl}`);
+        return false;
+    }
     
     // Validar variables de entorno
     const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
@@ -169,8 +194,10 @@ export const updateAirtablePdfLink = async (inspectionId: string, pdfUrl: string
     if (data.records && data.records.length > 0) {
       const recordId = data.records[0].id;
       
+      console.log(`Encontrado registro en Airtable con ID: ${recordId}, actualizando con PDF URL: ${pdfUrl}`);
+      
       // Actualizar el registro con el enlace del PDF
-      await fetch(`${AIRTABLE_API_URL}/${recordId}`, {
+      const updateResponse = await fetch(`${AIRTABLE_API_URL}/${recordId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -182,6 +209,9 @@ export const updateAirtablePdfLink = async (inspectionId: string, pdfUrl: string
           }
         })
       });
+      
+      const updateData = await updateResponse.json();
+      console.log('Respuesta de actualización de Airtable:', updateData);
       
       console.log('Enlace PDF actualizado en Airtable');
       return true;
