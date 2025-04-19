@@ -23,6 +23,7 @@ export interface EmailData {
   adminEmails?: string[];
   isAdmin?: boolean;
   adminAlert?: boolean; // Indica si este correo es una alerta para administradores
+  skipAdminAlert?: boolean; // Indica si se debe omitir el envío automático de alertas a administradores
 }
 
 export interface InspectionData {
@@ -57,7 +58,7 @@ export interface EmailServiceParams {
   skipAdminAlert?: boolean; // Indica si se debe omitir el envío automático de alertas a administradores
 }
 
-// Tipo para el contenido del correo
+// Tipo para el contenido del correo (compatible directamente con la API de Resend)
 export interface EmailContentParams {
   from: string;
   to: string | string[];
@@ -67,4 +68,10 @@ export interface EmailContentParams {
     filename: string;
     content: string;
   }[];
+  // Campos adicionales para la API de Resend
+  reply_to?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
+  // Metadatos para uso interno
+  type?: 'guest-form' | 'completed-form' | 'admin-alert';
 }

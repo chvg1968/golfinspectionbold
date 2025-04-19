@@ -1,4 +1,5 @@
-import { EmailData, EmailServiceParams } from "./types.ts";
+import { EmailData, EmailServiceParams, EmailContentParams } from "./types.ts";
+import { getFormCreatedAdminEmails, getFormCompletedAdminEmails, getDefaultSender, URLS } from "./config.ts";
 import {
   generarContenidoFormularioCreado,
   generarContenidoAlertaFormularioCreado,
@@ -49,54 +50,95 @@ export class EmailService {
       diagramPoints: [],
 
       // Lista de administradores (separada de los datos del huésped)
-      adminEmails: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"]
+      // Usamos la lista para formularios creados por defecto
+      adminEmails: getFormCreatedAdminEmails()
     };
 
     // Seleccionar template avanzado según el tipo de evento
     let emailContent;
-    if (emailData.type === 'guest-form') {
-      // Correo inicial al guest
-      emailContent = generarContenidoFormularioCreado(emailData);
 
-      // Enviar alerta a administradores SOLO si no se está enviando una alerta específica
-      // y si no hay un parámetro explícito que indique que no se debe enviar la alerta
-      if (!params.skipAdminAlert && !emailData.adminAlert) {
-        try {
-          const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
-          await this.sendAdminAlert(adminAlert);
-          console.log("Alerta a administradores enviada correctamente");
-        } catch (error) {
-          console.error("Error al enviar alerta a administradores:", error);
-        }
+    // Determinar si es un correo para administradores
+    const isAdminEmail = params.isAdmin || emailData.isAdmin;
+
+    if (emailData.type === 'guest-form') {
+      if (isAdminEmail) {
+        // Si es un correo para administradores, usar la plantilla de alerta
+        emailContent = generarContenidoAlertaFormularioCreado(emailData);
+        // Enviar directamente usando el método unificado
+        return this.sendAdminEmail(emailContent, 'created');
       } else {
-        console.log("Omitiendo alerta automática a administradores por configuración");
+        // Correo inicial al guest
+        emailContent = generarContenidoFormularioCreado(emailData);
+
+        // Enviar alerta a administradores SOLO si no se está enviando una alerta específica
+        // y si no hay un parámetro explícito que indique que no se debe enviar la alerta
+        if (!params.skipAdminAlert && !emailData.adminAlert) {
+          try {
+            const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
+            // Usar el nuevo método unificado
+            await this.sendAdminEmail(adminAlert, 'created');
+            console.log("Alerta a administradores enviada correctamente");
+          } catch (error) {
+            console.error("Error al enviar alerta a administradores:", error);
+          }
+        } else {
+          console.log("Omitiendo alerta automática a administradores por configuración");
+        }
       }
     } else if (emailData.type === 'completed-form') {
-      if (params.isAdmin) {
+      console.log("Procesando correo de formulario completado:", {
+        isAdmin: isAdminEmail,
+        to: emailData.guestEmail,
+        adminEmails: emailData.adminEmails
+      });
+
+      if (isAdminEmail) {
         // Correo a administradores con PDF firmado
+        console.log("Generando contenido para administradores");
         emailContent = generarContenidoFormularioFirmado(emailData);
+        console.log("Destinatarios del correo a administradores:", emailContent.to);
+
+        // Enviar directamente usando el método unificado
+        return this.sendAdminEmail(emailContent, 'completed');
       } else {
         // Confirmación al guest
+        console.log("Generando contenido para huésped");
         emailContent = generarContenidoConfirmacion(emailData);
+        console.log("Destinatarios del correo al huésped:", emailContent.to);
       }
     } else {
       // Fallback: alerta a administradores
       emailContent = generarContenidoAlertaFormularioCreado(emailData);
+
+      // Si es un tipo desconocido pero es para administradores, enviar directamente
+      if (isAdminEmail) {
+        return this.sendAdminEmail(emailContent, 'created');
+      }
     }
 
-    // Datos para el correo
-    const payload = {
-      from: 'Luxe Properties <noreply@luxepropertiespr.com>',
-      to: emailData.guestEmail ?
+    // Si llegamos aquí, es porque estamos enviando un correo al huésped
+    // Asegurarnos de que el emailContent tenga los destinatarios correctos
+    if (!emailContent.to) {
+      emailContent.to = emailData.guestEmail ?
         `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` :
-        'hernancalendar01@gmail.com',
-      subject: emailContent.subject,
-      html: emailContent.html || '<p>No HTML content</p>',
-      // Eliminar adjuntos de PDF
-      attachments: undefined
-    };
+        'hernancalendar01@gmail.com'; // Fallback por seguridad
+    }
 
-    console.log("Enviando correo con payload:", JSON.stringify(payload, null, 2));
+    // Asegurarnos de que el emailContent tenga el contenido HTML
+    if (!emailContent.html) {
+      emailContent.html = '<p>No HTML content</p>';
+    }
+
+    console.log("Enviando correo al huésped:", JSON.stringify({
+      to: emailContent.to,
+      subject: emailContent.subject
+    }));
+
+    // Verificar si el emailContent.to es un string con comas y convertirlo a array
+    if (typeof emailContent.to === 'string' && emailContent.to.includes(',')) {
+      console.log("Convirtiendo string con comas a array de destinatarios");
+      emailContent.to = emailContent.to.split(',').map((email: string) => email.trim());
+    }
 
     // Enviar correo
     let responseBody: string | null = null;
@@ -107,7 +149,7 @@ export class EmailService {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(emailContent)
       });
 
       responseBody = await response.text();
@@ -125,7 +167,8 @@ export class EmailService {
     } catch (error) {
       console.error("Error detallado al enviar correo:", {
         message: error.message,
-        payload: payload,
+        to: emailContent.to,
+        subject: emailContent.subject,
         responseBody: responseBody || 'Sin respuesta'
       });
       throw error;
@@ -162,22 +205,29 @@ export class EmailService {
     return `${baseUrl}/inspection`;
   }
 
-  private async sendAdminAlert(emailContent: EmailContentParams) {
+  /**
+   * Método unificado para enviar correos a administradores
+   * Este método reemplaza a sendAdminAlert y simplifica el envío de correos a administradores
+   */
+  async sendAdminEmail(emailContent: EmailContentParams, type: 'created' | 'completed' = 'created') {
     try {
+      // Crear una copia del emailContent para evitar modificar el original
+      const emailPayload = { ...emailContent };
+
       // Verificar que hay destinatarios
-      if (!Array.isArray(emailContent.to) || emailContent.to.length === 0) {
-        console.warn("No hay destinatarios administrativos para enviar la alerta");
+      if (!emailPayload.to) {
+        console.warn("No hay destinatarios administrativos para enviar el correo");
         return;
       }
 
-      const payload = {
-        from: emailContent.from,
-        to: emailContent.to,
-        subject: emailContent.subject,
-        html: emailContent.html || '<p>No HTML content</p>'
-      };
+      // El emailContent ya es compatible con la API de Resend, así que lo usamos directamente
+      console.log(`Enviando correo de formulario ${type} a administradores:`, emailPayload.to);
 
-      console.log("Enviando alerta a administradores:", emailContent.to);
+      // Verificar si el to es un string con comas y convertirlo a array
+      if (typeof emailPayload.to === 'string' && emailPayload.to.includes(',')) {
+        console.log("Convirtiendo string con comas a array de destinatarios");
+        emailPayload.to = emailPayload.to.split(',').map((email: string) => email.trim());
+      }
 
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',
@@ -185,46 +235,45 @@ export class EmailService {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(emailPayload)
       });
 
       const responseBody = await response.text();
-      console.log("Respuesta de alerta a administradores:", {
+      console.log(`Respuesta de correo de formulario ${type} a administradores:`, {
         status: response.status,
         statusText: response.statusText,
         body: responseBody
       });
 
       if (!response.ok) {
-        throw new Error(`Error enviando alerta a administradores: ${responseBody || 'Sin detalles'}`);
+        throw new Error(`Error enviando correo a administradores: ${responseBody || 'Sin detalles'}`);
       }
 
       return responseBody ? JSON.parse(responseBody) : null;
     } catch (error) {
-      console.error("Error detallado al enviar alerta a administradores:", error);
+      console.error(`Error detallado al enviar correo de formulario ${type} a administradores:`, error);
       throw error;
     }
   }
 
+  // Mantenemos el método original por compatibilidad, pero ahora usa el nuevo método unificado
+  private async sendAdminAlert(emailContent: EmailContentParams) {
+    return this.sendAdminEmail(emailContent, 'created');
+  }
+
   // Método simplificado para enviar correos directamente
-  async sendDirectEmail(payload: {
-    from: string;
-    to: string | string[];
-    subject: string;
-    html: string;
-  }) {
+  async sendDirectEmail(payload: EmailContentParams) {
     try {
-      // Asegurar que 'to' sea una cadena
-      const to = Array.isArray(payload.to) ? payload.to.join(',') : payload.to;
+      // Crear una copia del payload para evitar modificar el original
+      const emailPayload = { ...payload };
 
-      const emailPayload = {
-        from: payload.from,
-        to: to,
-        subject: payload.subject,
-        html: payload.html
-      };
+      console.log("Enviando correo directo a:", typeof emailPayload.to === 'string' ? emailPayload.to : JSON.stringify(emailPayload.to));
 
-      console.log("Enviando correo directo a:", to);
+      // Verificar que el payload.to sea un array si contiene múltiples destinatarios
+      if (typeof emailPayload.to === 'string' && emailPayload.to.includes(',')) {
+        console.log("Convirtiendo string con comas a array de destinatarios");
+        emailPayload.to = emailPayload.to.split(',').map((email: string) => email.trim());
+      }
 
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',

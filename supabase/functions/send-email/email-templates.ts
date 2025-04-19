@@ -1,5 +1,12 @@
 
 import { EmailData, EmailContentParams} from "./types.ts";
+import {
+  getAdminEmails,
+  getDefaultSender,
+  getFormCreatedAdminEmails,
+  getFormCompletedAdminEmails,
+  URLS
+} from "./config.ts";
 
 // Las funciones avanzadas de template de email están exportadas al final de este archivo:
 // - generarContenidoFormularioCreado
@@ -17,7 +24,7 @@ export function generarContenidoFormularioCreado(
   const { guestName, guestEmail, property, inspectionDate, formLinkWithDomain, formLink } = data;
 
   return {
-    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    from: getDefaultSender(),
     to: [guestEmail!],
     subject: `Golf Cart Inspection Form for ${property}`,
     html: `
@@ -62,18 +69,16 @@ export function generarContenidoAlertaFormularioCreado(
 ): EmailContentParams {
   const { guestName, guestEmail, property, inspectionDate, adminEmails } = data;
 
-  // Lista predeterminada de administradores
-  const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
-
-  // Usar adminEmails si existe, de lo contrario usar la lista predeterminada
+  // Obtener la lista de administradores para alertas de formulario creado
+  // Usar adminEmails si existe, de lo contrario usar la lista específica
   const recipients = Array.isArray(adminEmails) && adminEmails.length > 0
     ? adminEmails.filter((e): e is string => !!e)
-    : defaultAdmins;
+    : getFormCreatedAdminEmails();
 
   console.log("Destinatarios de alerta a administradores:", recipients);
 
   return {
-    from: "Luxe Properties <noreply@luxepropertiespr.com>",
+    from: getDefaultSender(),
     to: recipients,
     subject: `Alert: New form has been created for ${property}`,
     html: `
@@ -110,14 +115,9 @@ export function generarContenidoFormularioFirmado(
   const pdfLink = data.pdf_attachment ||
     (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
 
-  // Lista predeterminada de administradores
-  const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
-
   return {
-    from: "Luxe Properties <noreply@luxepropertiespr.com>",
-    to: defaultAdmins.filter(
-      (e): e is string => !!e
-    ),
+    from: getDefaultSender(),
+    to: getFormCompletedAdminEmails(),
     subject: `Inspection Form Signed - ${property}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -167,7 +167,7 @@ export function generarContenidoConfirmacion(
   // Si NO es admin (es guest), enviar correo sin enlace al PDF
   if (!isAdmin) {
     return {
-      from: "Luxe Properties <noreply@luxepropertiespr.com>",
+      from: getDefaultSender(),
       to: [guestEmail!],
       subject: `Golf Cart Inspection Completed for ${property}`,
       html: `
@@ -200,12 +200,9 @@ export function generarContenidoConfirmacion(
       pdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${fileName}_${dateStr}.pdf`;
     }
 
-    // Lista predeterminada de administradores
-    const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
-
     return {
-      from: "Luxe Properties <noreply@luxepropertiespr.com>",
-      to: defaultAdmins,
+      from: getDefaultSender(),
+      to: getFormCompletedAdminEmails(),
       subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

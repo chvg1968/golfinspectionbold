@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { EmailService } from "./email-service.ts";
 import { EmailData } from "./types.ts";
 import { generarContenidoAlertaFormularioCreado } from "./email-templates.ts";
+import { getFormCreatedAdminEmails } from "./config.ts";
 
 // Configuración de variables de entorno
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
@@ -239,23 +240,17 @@ async function handleRequest(req: Request): Promise<Response> {
           ...data,
           // Asegurar que los destinatarios sean los administradores
           guestEmail: undefined, // No enviar al huésped
-          adminEmails: data.adminEmails || ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"],
+          adminEmails: data.adminEmails || getFormCreatedAdminEmails(),
           adminAlert: true // Marcar explícitamente como alerta admin para evitar duplicados
         };
 
         const adminContent = generarContenidoAlertaFormularioCreado(adminEmailData);
 
-        // Enviar directamente sin pasar por la lógica compleja
-        const adminPayload = {
-          from: adminContent.from,
-          to: Array.isArray(adminContent.to) ? adminContent.to : [adminContent.to],
-          subject: adminContent.subject,
-          html: adminContent.html
-        };
+        // Enviar directamente usando el método unificado
+        console.log("Enviando alerta directa a administradores:", adminContent.to);
 
-        console.log("Enviando alerta directa a administradores:", adminPayload.to);
-
-        const adminResult = await adminEmailService.sendDirectEmail(adminPayload);
+        // El adminContent ya es compatible con la API de Resend
+        const adminResult = await adminEmailService.sendAdminEmail(adminContent, 'created');
 
         return new Response(
           JSON.stringify({
@@ -290,6 +285,14 @@ async function handleRequest(req: Request): Promise<Response> {
     // Enviar correo electrónico
     const emailService = new EmailService(Deno.env.get('RESEND_API_KEY') || '');
     try {
+      // Registrar los datos que se están enviando al servicio de correo
+      console.log("Enviando datos al servicio de correo:", {
+        isAdmin: data.isAdmin,
+        to: data.guestEmail,
+        type: data.type,
+        adminEmails: data.adminEmails
+      });
+
       const emailResult = await emailService.sendEmail({
         to_name: data.guestName,
         to_email: data.guestEmail,
@@ -302,7 +305,9 @@ async function handleRequest(req: Request): Promise<Response> {
         cart_type: data.cartType,
         cart_number: data.cartNumber,
         observations: data.observations,
-        pdf_attachment: data.pdfBase64
+        pdf_attachment: data.pdfBase64,
+        isAdmin: data.isAdmin, // Pasar el parámetro isAdmin
+        skipAdminAlert: data.skipAdminAlert // Pasar el parámetro skipAdminAlert
       });
 
       // Devolver una respuesta exitosa
