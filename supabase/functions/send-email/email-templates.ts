@@ -205,25 +205,13 @@ export function generarContenidoConfirmacion(
             <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
             <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
           </div>
-          <p style="margin-top: 20px;">Thank you for your collaboration.</p>
+          <p style="margin-top: 20px;">Have an amazing stay</p>
           <hr style="border: 1px solid #eee; margin: 20px 0;">
           <p style="color: #666;">Best regards,<br>Luxe Properties</p>
         </div>
       `,
     };
   } else {
-    // Si es admin, incluir enlace al PDF
-    // Priorizar los enlaces en este orden: pdf_attachment, pdfUrl, o construir uno basado en formId
-    const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
-    let pdfLink = data.pdf_attachment || data.pdfUrl;
-
-    // Si no hay enlace pero tenemos formId, construir el enlace
-    if (!pdfLink && formId) {
-      // Usar el formato del enlace que proporcionaste como ejemplo
-      const fileName = formId.replace(/\s+/g, '_').toLowerCase();
-      const dateStr = inspectionDate ? new Date(inspectionDate).toISOString().split('T')[0].replace(/-/g, '_') : '';
-      pdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${fileName}_${dateStr}.pdf`;
-    }
 
     return {
       from: getDefaultSender(),
@@ -238,13 +226,6 @@ export function generarContenidoConfirmacion(
             <p><strong>Property:</strong> ${property}</p>
             <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
           </div>
-          ${pdfLink ? `
-            <div style="margin: 30px 0; text-align: center;">
-              <a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Signed PDF</a>
-            </div>
-            <p style="margin-top: 20px;">If the button doesn't work, copy this link: ${pdfLink}</p>
-          ` : '<p style="color: #e53e3e;">No PDF link available for this inspection.</p>'}
-          <hr style="border: 1px solid #eee; margin: 20px 0;">
           <p style="color: #666;">Luxe Properties</p>
         </div>
       `,
