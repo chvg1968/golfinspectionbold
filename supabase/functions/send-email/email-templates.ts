@@ -100,11 +100,12 @@ export function generarContenidoFormularioFirmado(
     observations,
     formId,
   } = data;
-  // Priorizar pdf_attachment (Supabase pdfs bucket), si no existe usar pdfUrl
 
-  // Construir URL de Supabase PDFs bucket si no existe
-  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw'; // Reemplazar con variable de entorno
+  // Construir URL de Supabase PDFs bucket
+  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
   const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
+  
+  // Priorizar pdf_attachment (si existe), luego construir URL de Supabase
   const pdfLink = data.pdf_attachment || 
     (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
 
@@ -120,9 +121,9 @@ export function generarContenidoFormularioFirmado(
         <p>The guest <strong>${guestName}</strong> (${guestEmail}) has signed and completed the inspection form for <strong>${property}</strong>.</p>
         <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
           <p><strong>Guest Name:</strong> ${guestName || "N/A"}</p>
-<p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
-<p><strong>Inspection Date:</strong> ${data.inspectionDate || "N/A"}</p>
-<p><strong>Property:</strong> ${property}</p>
+          <p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
+          <p><strong>Inspection Date:</strong> ${data.inspectionDate || "N/A"}</p>
+          <p><strong>Property:</strong> ${property}</p>
           <p><strong>Cart Type:</strong> ${cartType}</p>
           <p><strong>Cart Number:</strong> ${cartNumber}</p>
           <p><strong>Observations:</strong> ${
@@ -148,13 +149,6 @@ export function generarContenidoFormularioFirmado(
               content: data.pdf_attachment,
             },
           ]
-        : typeof data.pdfUrl === "string" && data.pdfUrl
-        ? [
-            {
-              filename: `inspection_${formId || "signed"}.pdf`,
-              content: data.pdfUrl,
-            },
-          ]
         : undefined,
   };
 }
@@ -163,13 +157,9 @@ export function generarContenidoFormularioFirmado(
 export function generarContenidoConfirmacion(
   data: EmailData
 ): EmailContentParams {
-  const { guestName, guestEmail, property, inspectionDate, formId } = data;
+  const { guestName, guestEmail, property, inspectionDate } = data;
 
-  // Construir URL de Supabase PDFs bucket si no existe
-  const supabaseProjectId = 'lngsgyvpqhjmedjrycqw'; // Reemplazar con variable de entorno
-  const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
-  const pdfLink = data.pdf_attachment || 
-    (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
+  // NO incluir enlace al PDF para el guest
 
   return {
     from: "Luxe Properties <noreply@luxepropertiespr.com>",

@@ -306,7 +306,7 @@ function InspectionForm() {
 
       // Subir PDF a Supabase
       const pdfBlob = pdfData.download.blob;
-      const pdfFilename = `${formData.property}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${formData.inspectionDate}.pdf`;
+      const pdfFilename = `${formData.property.toLowerCase().replace(/\s+/g, '_')}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${formData.inspectionDate.replace(/-/g, '_')}.pdf`;
       const pdfUrl = await uploadPDF(pdfBlob, pdfFilename);
 
       if (!pdfUrl) {
@@ -520,10 +520,12 @@ function InspectionForm() {
             console.error('Error actualizando PDF en Airtable:', updateError);
           }
 
+          // Generar y subir PDF
+          const pdfUrl = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/rental_${id}_${new Date().toISOString().split('T')[0]}.pdf`;
+          
           // Enviar correos
           await Promise.all([
-            // Correo de confirmación al huésped y administradores (el servicio de correo
-            // se encargará de enviar a ambos según el tipo 'completed-form')
+            // Correo de confirmación al huésped (sin PDF)
             sendFormEmail('completed-form', {
               to_email: formData.guestEmail,
               to_name: formData.guestName,
@@ -536,12 +538,13 @@ function InspectionForm() {
               guestName: formData.guestName,
               guestEmail: formData.guestEmail,
               observations: formData.observations,
-              form_id: id, // Usar el ID de inspección
-              pdf_attachment: pdfUrl,
+              form_id: id,
               isAdmin: false // Correo al huésped
             }),
+            
+            // Correo a administradores (con PDF)
             sendFormEmail('completed-form', {
-              to_email: 'hernancalendar01@gmail.com',
+              to_email: 'hernancalendar01@gmail.com', // Este valor será ignorado ya que isAdmin=true
               to_name: 'Administrador',
               from_name: 'Golf Cart Inspection System',
               from_email: 'no-reply@email.golfcartinspection.app',
@@ -552,8 +555,8 @@ function InspectionForm() {
               guestName: formData.guestName,
               guestEmail: formData.guestEmail,
               observations: formData.observations,
-              form_id: id, // Usar el ID de inspección
-              pdf_attachment: pdfUrl,
+              form_id: id,
+              pdf_attachment: pdfUrl, // Incluir URL del PDF para administradores
               isAdmin: true // Correo a administradores
             })
           ]);
