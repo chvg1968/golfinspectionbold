@@ -378,26 +378,9 @@ function InspectionForm() {
               
               // Usar puntos seguros
               diagram_points: safePoints,
+              isCreationAlert: true // Indicar explícitamente que queremos enviar alerta
             });
           })(),
-          // NUEVO: Correo directo a los administradores (alerta de creación)
-          // Usando el mismo patrón que funciona para los formularios firmados
-          sendFormEmail('alert', {
-            to_email: 'hernancalendar01@gmail.com', // Correo principal de administrador
-            to_name: 'Administrador',
-            from_name: 'Golf Cart Inspection System',
-            from_email: 'no-reply@email.golfcartinspection.app',
-            property: formData.property,
-            cart_type: formData.cartType,
-            cart_number: formData.cartNumber,
-            inspection_date: formData.inspectionDate,
-            guestName: formData.guestName,
-            guestEmail: formData.guestEmail,
-            form_link: `${window.location.origin}/inspection/${inspection.id}`,
-            formLinkWithDomain: `${window.location.origin}/inspection/${inspection.id}`,
-            isAdmin: true,
-            isCreationAlert: true // Nuevo flag para diferenciar
-          }),
           sendToAirtable({
             guestName: formData.guestName,
             inspectionDate: formData.inspectionDate,
@@ -539,20 +522,26 @@ function InspectionForm() {
 
           // Enviar correos
           await Promise.all([
-            // Correo de confirmación al huésped
+            // Correo de confirmación al huésped y administradores (el servicio de correo
+            // se encargará de enviar a ambos según el tipo 'completed-form')
             sendFormEmail('completed-form', {
               to_email: formData.guestEmail,
               to_name: formData.guestName,
               from_name: 'Golf Cart Inspection System',
               from_email: 'no-reply@email.golfcartinspection.app',
               property: formData.property,
+              cart_type: formData.cartType,
+              cart_number: formData.cartNumber,
               inspection_date: formData.inspectionDate,
+              guestName: formData.guestName,
+              guestEmail: formData.guestEmail,
+              observations: formData.observations,
+              form_id: id, // Usar el ID de inspección
               pdf_attachment: pdfUrl,
-              isAdmin: false // Indicar que es para el huésped
+              isAdmin: false // Correo al huésped
             }),
-            // Correo a los administradores con el PDF
             sendFormEmail('completed-form', {
-              to_email: 'hernancalendar01@gmail.com', // Correo principal de administrador
+              to_email: 'hernancalendar01@gmail.com',
               to_name: 'Administrador',
               from_name: 'Golf Cart Inspection System',
               from_email: 'no-reply@email.golfcartinspection.app',
@@ -563,9 +552,9 @@ function InspectionForm() {
               guestName: formData.guestName,
               guestEmail: formData.guestEmail,
               observations: formData.observations,
-              form_id: id, // Usar el ID de inspección en lugar de form_id
-              pdf_attachment: pdfUrl, // Aseguramos que el PDF se adjunte
-              isAdmin: true // Indicar que es para administradores
+              form_id: id, // Usar el ID de inspección
+              pdf_attachment: pdfUrl,
+              isAdmin: true // Correo a administradores
             })
           ]);
 

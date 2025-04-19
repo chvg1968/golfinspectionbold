@@ -2,29 +2,24 @@
 export interface EmailData {
   guestName?: string;
   guestEmail?: string;
-  property: string;
-  type?: 'guest-form' | 'completed-form';
+  property?: string;
+  type?: string;
   inspectionDate?: string;
   formLink?: string;
   formLinkWithDomain?: string;
   formId?: string;
   replyTo?: string;
   subject?: string;
-  pdfBase64?: string;
-  pdf_attachment?: string;
   pdfUrl?: string;
+  pdf_attachment?: string;
+  pdfBase64?: string;
   cartType?: string;
   cartNumber?: string;
   observations?: string;
   signatureBase64?: string;
   termsAccepted?: boolean;
   diagramBase64?: string;
-  diagramPoints?: Array<{
-    x: number;
-    y: number;
-    color: string;
-    size?: number;
-  }>;
+  diagramPoints?: any[];
   adminEmails?: string[];
 }
 
@@ -37,42 +32,36 @@ export interface InspectionData {
 }
 
 export interface EmailServiceParams {
-  to_name?: string;
   to_email?: string;
+  to_name?: string;
   from_name?: string;
   from_email?: string;
-  property: string;
-  type?: 'guest-form' | 'completed-form';
-  cart_type?: string;
-  cart_number?: string;
+  property?: string;
+  type?: string;
   inspection_date?: string;
   form_link?: string;
-  pdf_attachment?: string;
+  formId?: string;
   reply_to?: string;
   subject?: string;
+  pdf_attachment?: string;
+  cart_type?: string;
+  cart_number?: string;
   observations?: string;
   signatureBase64?: string;
   termsAccepted?: boolean;
   diagramBase64?: string;
-  diagramPoints?: Array<{
-    x: number;
-    y: number;
-    color: string;
-    size?: number;
-  }>;
-  formId?: string;
+  diagramPoints?: any[];
   isAdmin?: boolean;
 }
 
 // Tipo para el contenido del correo
 export interface EmailContentParams {
   from: string;
-  to: string[];
+  to: string | string[];
   subject: string;
   html: string;
-  reply_to?: string;
-  attachments?: Array<{
+  attachments?: {
     filename: string;
     content: string;
-  }>;
+  }[];
 }

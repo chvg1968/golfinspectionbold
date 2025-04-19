@@ -37,6 +37,7 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
         baseId,
         tableName
     });
+    
     try {
         interface AirtableFields {
             'Form Id': string;
@@ -46,12 +47,23 @@ export async function sendToAirtable(formData: InspectionFormData, pdfLink: stri
             'PDF Link': string;
         }
 
+        // Asegurarse de que el pdfLink sea una URL válida y accesible
+        let finalPdfLink = pdfLink;
+        
+        // Si el pdfLink parece ser un ID o path relativo, construir la URL completa
+        if (formData.formId && !pdfLink.startsWith('http')) {
+            const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
+            const pdfFileName = `rental_${formData.formId}_${new Date().toISOString().split('T')[0]}.pdf`;
+            finalPdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}`;
+            console.log('Construyendo URL completa para PDF:', finalPdfLink);
+        }
+
         const fields: AirtableFields = {
             'Form Id': formData.formId || generateFormId(formData.guestName),
             'Inspection Date': formData.inspectionDate,
             'Guest Name': formData.guestName,
             'Property': formData.property,
-            'PDF Link': pdfLink
+            'PDF Link': finalPdfLink
         };
 
         // Validar que todos los campos tengan valor

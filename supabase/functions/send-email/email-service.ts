@@ -58,13 +58,15 @@ export class EmailService {
       // Correo inicial al guest
       emailContent = generarContenidoFormularioCreado(emailData);
       
-      // Enviar también alerta a administradores
-      try {
-        const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
-        await this.sendAdminAlert(adminAlert);
-        console.log("Alerta a administradores enviada correctamente");
-      } catch (error) {
-        console.error("Error al enviar alerta a administradores:", error);
+      // Enviar alerta a administradores SOLO si se indica explícitamente
+      if (params.isCreationAlert) {
+        try {
+          const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
+          await this.sendAdminAlert(adminAlert);
+          console.log("Alerta a administradores enviada correctamente");
+        } catch (error) {
+          console.error("Error al enviar alerta a administradores:", error);
+        }
       }
     } else if (emailData.type === 'completed-form') {
       if (params.isAdmin) {
@@ -73,6 +75,7 @@ export class EmailService {
       } else {
         // Confirmación al guest
         emailContent = generarContenidoConfirmacion(emailData);
+        // NO enviar automáticamente a administradores desde aquí
       }
     } else {
       // Fallback: alerta a administradores
