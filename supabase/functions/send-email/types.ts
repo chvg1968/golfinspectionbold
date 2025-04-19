@@ -22,6 +22,7 @@ export interface EmailData {
   diagramPoints?: any[];
   adminEmails?: string[];
   isAdmin?: boolean;
+  adminAlert?: boolean; // Indica si este correo es una alerta para administradores
 }
 
 export interface InspectionData {
@@ -53,6 +54,7 @@ export interface EmailServiceParams {
   diagramBase64?: string;
   diagramPoints?: any[];
   isAdmin?: boolean;
+  skipAdminAlert?: boolean; // Indica si se debe omitir el envío automático de alertas a administradores
 }
 
 // Tipo para el contenido del correo

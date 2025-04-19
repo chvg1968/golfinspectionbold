@@ -61,10 +61,10 @@ export function generarContenidoAlertaFormularioCreado(
   data: EmailData
 ): EmailContentParams {
   const { guestName, guestEmail, property, inspectionDate, adminEmails } = data;
-  
+
   // Lista predeterminada de administradores
   const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
-  
+
   // Usar adminEmails si existe, de lo contrario usar la lista predeterminada
   const recipients = Array.isArray(adminEmails) && adminEmails.length > 0
     ? adminEmails.filter((e): e is string => !!e)
@@ -105,14 +105,17 @@ export function generarContenidoFormularioFirmado(
   // Construir URL de Supabase PDFs bucket
   const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
   const pdfFileName = `rental_${formId}_${new Date().toISOString().split('T')[0]}.pdf`;
-  
+
   // Priorizar pdf_attachment (si existe), luego construir URL de Supabase
-  const pdfLink = data.pdf_attachment || 
+  const pdfLink = data.pdf_attachment ||
     (formId ? `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}` : data.pdfUrl);
+
+  // Lista predeterminada de administradores
+  const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
 
   return {
     from: "Luxe Properties <noreply@luxepropertiespr.com>",
-    to: ["conradovilla@hotmail.com","luxeprbahia@gmail.com"].filter(
+    to: defaultAdmins.filter(
       (e): e is string => !!e
     ),
     subject: `Inspection Form Signed - ${property}`,
@@ -188,7 +191,7 @@ export function generarContenidoConfirmacion(
     // Priorizar los enlaces en este orden: pdf_attachment, pdfUrl, o construir uno basado en formId
     const supabaseProjectId = 'lngsgyvpqhjmedjrycqw';
     let pdfLink = data.pdf_attachment || data.pdfUrl;
-    
+
     // Si no hay enlace pero tenemos formId, construir el enlace
     if (!pdfLink && formId) {
       // Usar el formato del enlace que proporcionaste como ejemplo
@@ -196,10 +199,13 @@ export function generarContenidoConfirmacion(
       const dateStr = inspectionDate ? new Date(inspectionDate).toISOString().split('T')[0].replace(/-/g, '_') : '';
       pdfLink = `https://${supabaseProjectId}.supabase.co/storage/v1/object/public/pdfs/${fileName}_${dateStr}.pdf`;
     }
-    
+
+    // Lista predeterminada de administradores
+    const defaultAdmins = ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"];
+
     return {
       from: "Luxe Properties <noreply@luxepropertiespr.com>",
-      to: ["conradovilla@hotmail.com", "luxeprbahia@gmail.com"],
+      to: defaultAdmins,
       subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

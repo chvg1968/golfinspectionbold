@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { EmailService } from "./email-service.ts";
 import { EmailData } from "./types.ts";
+import { generarContenidoAlertaFormularioCreado } from "./email-templates.ts";
 
 // Configuración de variables de entorno
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
@@ -29,8 +30,8 @@ function handleCORS(req: Request, origin: string): Response | null {
         const originUrl = new URL(origin);
         const allowedUrl = new URL(allowedOrigin);
         return (
-          originUrl.hostname === allowedUrl.hostname && 
-          (originUrl.port === allowedUrl.port || 
+          originUrl.hostname === allowedUrl.hostname &&
+          (originUrl.port === allowedUrl.port ||
            (allowedUrl.hostname === 'localhost' && ['5173', '5174', '60943'].includes(originUrl.port))
           )
         );
@@ -55,7 +56,7 @@ function handleCORS(req: Request, origin: string): Response | null {
 
   // Validar método
   if (req.method !== "POST") {
-    return new Response('Método no permitido', { 
+    return new Response('Método no permitido', {
       status: 405,
       headers: {
         'Access-Control-Allow-Origin': isOriginAllowed ? origin : ALLOWED_ORIGINS[0],
@@ -89,7 +90,7 @@ async function safeReadRequestBody(req: Request): Promise<string> {
     // Concatenar chunks
     const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
     const combinedChunk = new Uint8Array(totalLength);
-    
+
     let position = 0;
     for (const chunk of chunks) {
       combinedChunk.set(chunk, position);
@@ -109,7 +110,7 @@ async function safeReadRequestBody(req: Request): Promise<string> {
 async function handleRequest(req: Request): Promise<Response> {
   // Obtener origen de la solicitud
   const origin = req.headers.get('origin') || '*';
-  
+
   // Manejar CORS
   const corsResponse = handleCORS(req, origin);
   if (corsResponse) return corsResponse;
@@ -133,26 +134,26 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // Validación de campos requeridos
     const requiredFields: (keyof EmailData)[] = [
-      "guestName", 
-      "guestEmail", 
+      "guestName",
+      "guestEmail",
       "property"
     ];
 
     const missingFields = requiredFields.filter(field => !data[field]);
-    
+
     if (missingFields.length > 0) {
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Campos requeridos incompletos",
-          missingFields 
-        }), 
-        { 
+          missingFields
+        }),
+        {
           status: 400,
-          headers: { 
+          headers: {
             'Access-Control-Allow-Origin': origin,
             'Content-Type': 'application/json',
             'Vary': 'Origin'
-          } 
+          }
         }
       );
     }
@@ -172,11 +173,11 @@ async function handleRequest(req: Request): Promise<Response> {
         firstPoints: data.diagramPoints.slice(0, 3)
       });
 
-      const invalidPoints = data.diagramPoints.filter(point => 
-        !point || 
-        typeof point.x !== 'number' || 
-        typeof point.y !== 'number' || 
-        isNaN(point.x) || 
+      const invalidPoints = data.diagramPoints.filter(point =>
+        !point ||
+        typeof point.x !== 'number' ||
+        typeof point.y !== 'number' ||
+        isNaN(point.x) ||
         isNaN(point.y)
       );
 
@@ -187,17 +188,17 @@ async function handleRequest(req: Request): Promise<Response> {
         });
 
         return new Response(
-          JSON.stringify({ 
+          JSON.stringify({
             error: "Puntos de diagrama inválidos",
-            invalidPoints 
-          }), 
-          { 
+            invalidPoints
+          }),
+          {
             status: 400,
-            headers: { 
+            headers: {
               'Access-Control-Allow-Origin': origin,
               'Content-Type': 'application/json',
               'Vary': 'Origin'
-            } 
+            }
           }
         );
       }
@@ -211,16 +212,16 @@ async function handleRequest(req: Request): Promise<Response> {
         if (!base64Regex.test(data.diagramBase64)) {
           console.error('Formato de diagrama base64 inválido');
           return new Response(
-            JSON.stringify({ 
-              error: "Formato de diagrama base64 inválido" 
-            }), 
-            { 
+            JSON.stringify({
+              error: "Formato de diagrama base64 inválido"
+            }),
+            {
               status: 400,
-              headers: { 
+              headers: {
                 'Access-Control-Allow-Origin': origin,
                 'Content-Type': 'application/json',
                 'Vary': 'Origin'
-              } 
+              }
             }
           );
         }
@@ -238,11 +239,12 @@ async function handleRequest(req: Request): Promise<Response> {
           ...data,
           // Asegurar que los destinatarios sean los administradores
           guestEmail: undefined, // No enviar al huésped
-          adminEmails: data.adminEmails || ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"]
+          adminEmails: data.adminEmails || ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"],
+          adminAlert: true // Marcar explícitamente como alerta admin para evitar duplicados
         };
-        
+
         const adminContent = generarContenidoAlertaFormularioCreado(adminEmailData);
-        
+
         // Enviar directamente sin pasar por la lógica compleja
         const adminPayload = {
           from: adminContent.from,
@@ -250,36 +252,36 @@ async function handleRequest(req: Request): Promise<Response> {
           subject: adminContent.subject,
           html: adminContent.html
         };
-        
+
         console.log("Enviando alerta directa a administradores:", adminPayload.to);
-        
+
         const adminResult = await adminEmailService.sendDirectEmail(adminPayload);
-        
+
         return new Response(
-          JSON.stringify({ 
-            message: "Alerta admin enviada exitosamente", 
-            result: adminResult || {} 
-          }), 
-          { 
+          JSON.stringify({
+            message: "Alerta admin enviada exitosamente",
+            result: adminResult || {}
+          }),
+          {
             status: 200,
-            headers: { 
+            headers: {
               'Access-Control-Allow-Origin': origin,
               'Content-Type': 'application/json',
               'Vary': 'Origin'
-            } 
+            }
           }
         );
       } catch (adminError) {
         console.error("Error enviando alerta admin:", adminError);
         return new Response(
-          JSON.stringify({ error: "Error enviando alerta admin", details: adminError.message }), 
-          { 
+          JSON.stringify({ error: "Error enviando alerta admin", details: adminError.message }),
+          {
             status: 500,
-            headers: { 
+            headers: {
               'Access-Control-Allow-Origin': origin,
               'Content-Type': 'application/json',
               'Vary': 'Origin'
-            } 
+            }
           }
         );
       }
@@ -305,33 +307,33 @@ async function handleRequest(req: Request): Promise<Response> {
 
       // Devolver una respuesta exitosa
       return new Response(
-        JSON.stringify({ 
-          message: "Correo enviado exitosamente", 
-          result: emailResult || {} 
-        }), 
-        { 
+        JSON.stringify({
+          message: "Correo enviado exitosamente",
+          result: emailResult || {}
+        }),
+        {
           status: 200,
-          headers: { 
+          headers: {
             'Access-Control-Allow-Origin': origin,
             'Content-Type': 'application/json',
             'Vary': 'Origin'
-          } 
+          }
         }
       );
     } catch (error) {
       console.error('Error al enviar correo:', error);
       return new Response(
-        JSON.stringify({ 
+        JSON.stringify({
           error: "Error al enviar correo",
-          details: error.message 
-        }), 
-        { 
+          details: error.message
+        }),
+        {
           status: 500,
-          headers: { 
+          headers: {
             'Access-Control-Allow-Origin': origin,
             'Content-Type': 'application/json',
             'Vary': 'Origin'
-          } 
+          }
         }
       );
     }
@@ -346,7 +348,7 @@ async function handleRequest(req: Request): Promise<Response> {
       errorProperties: Object.keys(error),
       fullErrorObject: JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
     });
-    
+
     // Log detallado del error
     console.error("Detalles del error:", {
       name: error instanceof Error ? error.name : 'Unknown Error',
@@ -355,23 +357,23 @@ async function handleRequest(req: Request): Promise<Response> {
       type: typeof error,
       stringified: JSON.stringify(error, Object.getOwnPropertyNames(error))
     });
-    
+
     return new Response(
-      JSON.stringify({ 
-        error: "Error interno", 
+      JSON.stringify({
+        error: "Error interno",
         message: error instanceof Error ? error.message : String(error),
         details: error instanceof Error ? {
           name: error.name,
           stack: error.stack
         } : {}
-      }), 
-      { 
+      }),
+      {
         status: 500,
-        headers: { 
+        headers: {
           'Access-Control-Allow-Origin': origin,
           'Content-Type': 'application/json',
           'Vary': 'Origin'
-        } 
+        }
       }
     );
   }

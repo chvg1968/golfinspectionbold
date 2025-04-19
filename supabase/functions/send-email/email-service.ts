@@ -36,18 +36,18 @@ export class EmailService {
       replyTo: params.reply_to,
       subject: params.subject || this.generateSubject(params),
       pdfBase64: params.pdf_attachment,
-      
+
       // Campos adicionales de inspección
       cartType: params.cart_type,
       cartNumber: params.cart_number,
       observations: params.observations,
-      
+
       // Campos de firma y términos
       signatureBase64: params.signatureBase64,
       termsAccepted: params.termsAccepted,
       diagramBase64: params.diagramBase64,
       diagramPoints: [],
-      
+
       // Lista de administradores (separada de los datos del huésped)
       adminEmails: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"]
     };
@@ -57,14 +57,19 @@ export class EmailService {
     if (emailData.type === 'guest-form') {
       // Correo inicial al guest
       emailContent = generarContenidoFormularioCreado(emailData);
-      
-      // Enviar alerta a administradores SIEMPRE cuando se crea un formulario
-      try {
-        const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
-        await this.sendAdminAlert(adminAlert);
-        console.log("Alerta a administradores enviada correctamente");
-      } catch (error) {
-        console.error("Error al enviar alerta a administradores:", error);
+
+      // Enviar alerta a administradores SOLO si no se está enviando una alerta específica
+      // y si no hay un parámetro explícito que indique que no se debe enviar la alerta
+      if (!params.skipAdminAlert && !emailData.adminAlert) {
+        try {
+          const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
+          await this.sendAdminAlert(adminAlert);
+          console.log("Alerta a administradores enviada correctamente");
+        } catch (error) {
+          console.error("Error al enviar alerta a administradores:", error);
+        }
+      } else {
+        console.log("Omitiendo alerta automática a administradores por configuración");
       }
     } else if (emailData.type === 'completed-form') {
       if (params.isAdmin) {
@@ -82,8 +87,8 @@ export class EmailService {
     // Datos para el correo
     const payload = {
       from: 'Luxe Properties <noreply@luxepropertiespr.com>',
-      to: emailData.guestEmail ? 
-        `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` : 
+      to: emailData.guestEmail ?
+        `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` :
         'hernancalendar01@gmail.com',
       subject: emailContent.subject,
       html: emailContent.html || '<p>No HTML content</p>',
@@ -132,28 +137,28 @@ export class EmailService {
     if (params.subject) {
       return params.subject;
     }
-    
+
     if (params.property) {
       return `Golf Cart Inspection for ${params.property}`;
     }
-    
+
     return 'Golf Cart Inspection Form';
   }
 
   private generateFormLink(params: EmailServiceParams): string {
     // Generar un link basado en los parámetros disponibles
     const baseUrl = 'https://golf-cart-inspection.netlify.app';
-    
+
     if (params.formId) {
       return `${baseUrl}/inspection/${params.formId}`;
     }
-    
+
     if (params.to_name && params.property) {
       const sluggedName = params.to_name.toLowerCase().replace(/\s+/g, '-');
       const sluggedProperty = params.property.toLowerCase().replace(/\s+/g, '-');
       return `${baseUrl}/inspection/${sluggedName}-${sluggedProperty}-${Date.now()}`;
     }
-    
+
     return `${baseUrl}/inspection`;
   }
 
@@ -164,16 +169,16 @@ export class EmailService {
         console.warn("No hay destinatarios administrativos para enviar la alerta");
         return;
       }
-      
+
       const payload = {
         from: emailContent.from,
         to: emailContent.to,
         subject: emailContent.subject,
         html: emailContent.html || '<p>No HTML content</p>'
       };
-      
+
       console.log("Enviando alerta a administradores:", emailContent.to);
-      
+
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -182,18 +187,18 @@ export class EmailService {
         },
         body: JSON.stringify(payload)
       });
-      
+
       const responseBody = await response.text();
       console.log("Respuesta de alerta a administradores:", {
         status: response.status,
         statusText: response.statusText,
         body: responseBody
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error enviando alerta a administradores: ${responseBody || 'Sin detalles'}`);
       }
-      
+
       return responseBody ? JSON.parse(responseBody) : null;
     } catch (error) {
       console.error("Error detallado al enviar alerta a administradores:", error);
@@ -211,16 +216,16 @@ export class EmailService {
     try {
       // Asegurar que 'to' sea una cadena
       const to = Array.isArray(payload.to) ? payload.to.join(',') : payload.to;
-      
+
       const emailPayload = {
         from: payload.from,
         to: to,
         subject: payload.subject,
         html: payload.html
       };
-      
+
       console.log("Enviando correo directo a:", to);
-      
+
       const response = await fetch(this.API_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -229,17 +234,17 @@ export class EmailService {
         },
         body: JSON.stringify(emailPayload)
       });
-      
+
       const responseText = await response.text();
       console.log("Respuesta de correo directo:", {
         status: response.status,
         body: responseText
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error enviando correo directo: ${responseText}`);
       }
-      
+
       return responseText ? JSON.parse(responseText) : null;
     } catch (error) {
       console.error("Error en sendDirectEmail:", error);

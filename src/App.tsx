@@ -82,7 +82,7 @@ function InspectionForm() {
     cartNumber: '',
     observations: '',
   });
-  
+
   const [isGuestView, setIsGuestView] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -90,7 +90,7 @@ function InspectionForm() {
   const [diagramPoints, setDiagramPoints] = useState<Point[]>([]);
   const [diagramHistory, setDiagramHistory] = useState<Point[][]>([[]]);
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   const signaturePadRef = useRef<SignaturePad>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const formContentRef = useRef<HTMLDivElement>(null);
@@ -115,10 +115,10 @@ function InspectionForm() {
 
   const loadInspection = async (inspectionId: string) => {
     if (loadingRef.current) return;
-    
+
     loadingRef.current = true;
     setIsLoading(true);
-    
+
     try {
       const { data: inspection, error } = await supabase
         .from('inspections')
@@ -154,7 +154,7 @@ function InspectionForm() {
             const uniquePoints = diagramData.points.filter((point, index, self) =>
               index === self.findIndex(p => p.x === point.x && p.y === point.y && p.color === point.color)
             );
-            
+
             setDiagramPoints(uniquePoints);
             // Crear un historial que permita deshacer cada marca
             const newHistory = uniquePoints.reduce<Point[][]>(
@@ -255,7 +255,7 @@ function InspectionForm() {
       const previousPoints = diagramHistory[currentStep - 1] || [];
       setCurrentStep(prev => prev - 1);
       setDiagramPoints(previousPoints);
-      
+
       if (selectedProperty) {
         saveDiagramMarks(selectedProperty.diagramType, previousPoints).catch(error => {
           console.error('Error saving diagram marks after undo:', error);
@@ -269,7 +269,7 @@ function InspectionForm() {
       setDiagramPoints([]);
       setDiagramHistory([[]]);
       setCurrentStep(0);
-      
+
       if (selectedProperty) {
         saveDiagramMarks(selectedProperty.diagramType, []).catch(error => {
           console.error('Error clearing diagram marks:', error);
@@ -287,7 +287,7 @@ function InspectionForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
-    
+
     try {
       // Validar firma en vista de invitado
       if (isGuestView && !signaturePadRef.current?.toData()?.length) {
@@ -381,7 +381,7 @@ function InspectionForm() {
               inspection_date: formData.inspectionDate,
               form_link: `${window.location.origin}/inspection/${inspection.id}`,
               pdf_attachment: pdfUrl, // Usar el enlace del PDF directamente
-              
+
               // Usar puntos seguros
               diagram_points: safePoints,
               isCreationAlert: true // Indicar explícitamente que queremos enviar alerta
@@ -455,21 +455,21 @@ function InspectionForm() {
           .select('form_id, form_link')
           .eq('id', id)
           .single();
-        
+
         let formId = inspectionData?.form_id;
         let formLink = inspectionData?.form_link;
         const pdfFileName = `rental_6_passenger_150_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-        
+
         if (fetchError || !formId) {
           console.error('Error obteniendo form_id:', fetchError);
           // Generar un form_id si no existe
           formId = `${formData.guestName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-          
+
           formLink = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/${pdfFileName}`;
-          
+
           await supabase
             .from('inspections')
-            .update({ 
+            .update({
               form_id: formId,
               form_link: formLink
             })
@@ -501,7 +501,7 @@ function InspectionForm() {
           // Ya que form_id no existe en la tabla, generamos un ID único para el PDF
           const uniqueId = `${id}-${Date.now()}`;
           const pdfFileName = `${formData.property}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-          
+
           // Restaurar la funcionalidad de descarga del PDF
           if (pdfData && pdfData.download && pdfData.download.blob) {
             try {
@@ -528,7 +528,7 @@ function InspectionForm() {
 
           // Generar y subir PDF
           const pdfUrl = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/rental_${id}_${new Date().toISOString().split('T')[0]}.pdf`;
-          
+
           // Enviar correos
           await Promise.all([
             // Correo de confirmación al huésped (sin PDF)
@@ -547,7 +547,7 @@ function InspectionForm() {
               form_id: id,
               isAdmin: false // Correo al huésped
             }),
-            
+
             // Correo a administradores (con PDF)
             sendFormEmail('completed-form', {
               to_email: 'hernancalendar01@gmail.com', // Este valor será ignorado ya que isAdmin=true
@@ -563,7 +563,8 @@ function InspectionForm() {
               observations: formData.observations,
               form_id: id,
               pdf_attachment: pdfUrl, // Incluir URL del PDF para administradores
-              isAdmin: true // Correo a administradores
+              isAdmin: true, // Correo a administradores
+              skipAdminAlert: true // Evitar envío duplicado de alertas
             })
           ]);
 
@@ -585,7 +586,7 @@ function InspectionForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       {notification && (
-        <div 
+        <div
           className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
           role="alert"
         >
@@ -609,7 +610,7 @@ function InspectionForm() {
               Golf Cart Inspection
             </h1>
           </div>
-          
+
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-8">
             <GuestInformation
               formData={formData}

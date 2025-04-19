@@ -16,6 +16,8 @@ export interface EmailParams {
   diagram_base64?: string;
   formId?: string;
   isAdmin?: boolean;
+  skipAdminAlert?: boolean; // Evita el envío automático de alertas a administradores
+  adminAlert?: boolean; // Indica si este correo es una alerta para administradores
   diagram_points?: Array<{
     x: number;
     y: number;
@@ -31,8 +33,8 @@ export function generateMessageId(): string {
 }
 
 export async function sendFormEmail(type: 'guest-form' | 'completed-form', params: EmailParams) {
-  console.log('Iniciando envío de email...', { 
-    type, 
+  console.log('Iniciando envío de email...', {
+    type,
     hasDiagramBase64: !!params.diagram_base64,
     diagramBase64Length: params.diagram_base64?.length
   });
@@ -70,8 +72,11 @@ export async function sendFormEmail(type: 'guest-form' | 'completed-form', param
         pdfBase64: params.pdf_attachment,
         diagramPoints: params.diagram_points,
         replyTo: params.reply_to || 'support@luxepropertiespr.com',
+        isAdmin: params.isAdmin,
+        skipAdminAlert: params.isAdmin ? true : params.skipAdminAlert, // Evitar alertas duplicadas cuando es un correo a admin
+        adminAlert: params.adminAlert,
         subject: params.subject || (
-          type === 'guest-form' 
+          type === 'guest-form'
             ? `Formulario de Inspección de Carrito de Golf - ${params.property}`
             : `Inspección de Carrito de Golf Completada - ${params.property}`
         )
