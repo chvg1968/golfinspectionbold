@@ -1,4 +1,5 @@
-import { EmailData, EmailContentParams } from "./types.ts";
+
+import { EmailData, EmailContentParams} from "./types.ts";
 
 // Las funciones avanzadas de template de email están exportadas al final de este archivo:
 // - generarContenidoFormularioCreado
@@ -158,26 +159,57 @@ export function generarContenidoConfirmacion(
   data: EmailData
 ): EmailContentParams {
   const { guestName, guestEmail, property, inspectionDate } = data;
+  const isAdmin = !!data.isAdmin; // Convertir a booleano explícito
 
-  // NO incluir enlace al PDF para el guest
-
-  return {
-    from: "Luxe Properties <noreply@luxepropertiespr.com>",
-    to: [guestEmail!],
-    subject: `Golf Cart Inspection Completed for ${property}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
-        <p style="margin-bottom: 15px;">Dear ${guestName},</p>
-        <p style="margin-bottom: 20px;">Thank you for completing the inspection form for the golf cart at ${property}. Your submission has been received.</p>
-        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
-          <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
-          <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
+  // Si NO es admin (es guest), enviar correo sin enlace al PDF
+  if (!isAdmin) {
+    return {
+      from: "Luxe Properties <noreply@luxepropertiespr.com>",
+      to: [guestEmail!],
+      subject: `Golf Cart Inspection Completed for ${property}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
+          <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
+          <p style="margin-bottom: 15px;">Dear ${guestName},</p>
+          <p style="margin-bottom: 20px;">Thank you for completing the inspection form for the golf cart at ${property}. Your submission has been received.</p>
+          <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+            <p style="margin-bottom: 10px;"><strong>Property:</strong> ${property}</p>
+            <p style="margin-bottom: 10px;"><strong>Inspection Date:</strong> ${inspectionDate}</p>
+          </div>
+          <p style="margin-top: 20px;">Thank you for your collaboration.</p>
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666;">Best regards,<br>Luxe Properties</p>
         </div>
-        <p style="margin-top: 20px;">Thank you for your collaboration.</p>
-        <hr style="border: 1px solid #eee; margin: 20px 0;">
-        <p style="color: #666;">Golf Cart Inspection System</p>
-      </div>
-    `,
-  };
+      `,
+    };
+  } else {
+    // Si es admin, incluir enlace al PDF
+    const pdfLink = data.pdf_attachment || data.pdfUrl;
+    
+    return {
+      from: "Luxe Properties <noreply@luxepropertiespr.com>",
+      to: ["hernancalendar01@gmail.com", "luxeprbahia@gmail.com"],
+      subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
+          <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
+          <p>The guest <strong>${guestName}</strong> has completed the inspection form for <strong>${property}</strong>.</p>
+          <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+            <p><strong>Property:</strong> ${property}</p>
+            <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
+          </div>
+          ${pdfLink ? `
+            <div style="margin: 30px 0; text-align: center;">
+              <a href="${pdfLink}" style="background-color: #3182ce; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">View Signed PDF</a>
+            </div>
+            <p style="margin-top: 20px;">If the button doesn't work, copy this link: ${pdfLink}</p>
+          ` : '<p style="color: #e53e3e;">No PDF link available for this inspection.</p>'}
+          <hr style="border: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #666;">Luxe Properties</p>
+        </div>
+      `,
+    };
+  }
 }

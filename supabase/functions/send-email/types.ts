@@ -21,6 +21,7 @@ export interface EmailData {
   diagramBase64?: string;
   diagramPoints?: any[];
   adminEmails?: string[];
+  isAdmin?: boolean;
 }
 
 export interface InspectionData {
