@@ -361,38 +361,37 @@ function InspectionForm() {
         });
 
         // Modificar el envío para usar el enlace del PDF
-        await Promise.all([
-          (() => {
-            // Registro detallado del PDF
-            console.log('Detalles del PDF:', {
-              pdfData: pdfData,
-              base64Disponible: !!pdfData?.download?.base64,
-              base64Length: pdfData?.download?.base64?.length
-            });
+        // 1. Enviar a Airtable y obtener el recordId
+        const recordId = await sendToAirtable({
+          guestName: formData.guestName,
+          inspectionDate: formData.inspectionDate,
+          property: formData.property,
+          inspectionStatus: 'Pending'
+        }, pdfUrl);
 
-            return sendFormEmail('guest-form', {
-              to_email: formData.guestEmail,
-              to_name: formData.guestName,
-              from_name: 'Golf Cart Inspection System',
-              from_email: 'no-reply@email.golfcartinspection.app',
-              property: formData.property,
-              cart_type: formData.cartType,
-              cart_number: formData.cartNumber,
-              inspection_date: formData.inspectionDate,
-              form_link: `${window.location.origin}/inspection/${inspection.id}`,
-              pdf_attachment: pdfUrl, // Usar el enlace del PDF directamente
+        // 2. Guardar el recordId de Airtable en Supabase
+        if (recordId) {
+          await supabase
+            .from('inspections')
+            .update({ airtable_record_id: recordId })
+            .eq('id', inspection.id);
+        }
 
-              // Usar puntos seguros
-              diagram_points: safePoints,
-              isCreationAlert: true // Indicar explícitamente que queremos enviar alerta
-            });
-          })(),
-          sendToAirtable({
-            guestName: formData.guestName,
-            inspectionDate: formData.inspectionDate,
-            property: formData.property
-          }, pdfUrl)
-        ]);
+        // 3. Enviar email al invitado
+        await sendFormEmail('guest-form', {
+          to_email: formData.guestEmail,
+          to_name: formData.guestName,
+          from_name: 'Golf Cart Inspection System',
+          from_email: 'no-reply@email.golfcartinspection.app',
+          property: formData.property,
+          cart_type: formData.cartType,
+          cart_number: formData.cartNumber,
+          inspection_date: formData.inspectionDate,
+          form_link: `${window.location.origin}/inspection/${inspection.id}`,
+          pdf_attachment: pdfUrl,
+          diagram_points: safePoints,
+          isCreationAlert: true
+        });
 
         console.log('Detalles de puntos de diagrama:', {
           diagramPointsCount: safePoints.length,
@@ -476,11 +475,21 @@ function InspectionForm() {
             .eq('id', id);
         }
 
-        // Actualizar el enlace del PDF en Airtable
-        try {
-          await updateAirtablePdfLink(formId, pdfUrl);
-        } catch (updateError) {
-          console.error('Error actualizando PDF en Airtable:', updateError);
+        // Recuperar el recordId real de Airtable desde Supabase
+        const { data: airtableRow } = await supabase
+          .from('inspections')
+          .select('airtable_record_id')
+          .eq('id', id)
+          .single();
+        const recordId = airtableRow?.airtable_record_id;
+        if (recordId) {
+          try {
+            await updateAirtablePdfLink(recordId, pdfUrl);
+          } catch (updateError) {
+            console.error('Error actualizando PDF en Airtable:', updateError);
+          }
+        } else {
+          console.error('No se encontró el recordId de Airtable en Supabase para esta inspección');
         }
 
         // Cuando se firma un formulario (vista de invitado)
@@ -499,7 +508,7 @@ function InspectionForm() {
           if (error) throw error;
 
           // Ya que form_id no existe en la tabla, generamos un ID único para el PDF
-          const uniqueId = `${id}-${Date.now()}`;
+
           const pdfFileName = `${formData.property}_${formData.guestName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
 
           // Restaurar la funcionalidad de descarga del PDF
@@ -514,59 +523,45 @@ function InspectionForm() {
               document.body.removeChild(link);
               window.URL.revokeObjectURL(downloadUrl);
               console.log('PDF descargado correctamente');
+
+              // Enviar correos de forma asíncrona
+              await sendFormEmail('completed-form', {
+                to_email: formData.guestEmail,
+                to_name: formData.guestName,
+                from_name: 'Golf Cart Inspection System',
+                from_email: 'no-reply@email.golfcartinspection.app',
+                property: formData.property,
+                cart_type: formData.cartType,
+                cart_number: formData.cartNumber,
+                inspection_date: formData.inspectionDate,
+                guestName: formData.guestName,
+                guestEmail: formData.guestEmail,
+                observations: formData.observations,
+                form_id: id,
+                isAdmin: false // Correo al huésped
+              });
+
+              await sendFormEmail('completed-form', {
+                to_email: formData.guestEmail, // Usar el email del huésped real
+                to_name: formData.guestName, // Usar el nombre del huésped real
+                from_name: 'Golf Cart Inspection System',
+                from_email: 'no-reply@email.golfcartinspection.app',
+                property: formData.property,
+                cart_type: formData.cartType,
+                cart_number: formData.cartNumber,
+                inspection_date: formData.inspectionDate,
+                observations: formData.observations,
+                formId: id,
+                pdf_attachment: pdfUrl, // Incluir URL del PDF para administradores
+                isAdmin: true, // Correo a administradores
+                skipAdminAlert: true // Evitar envío duplicado de alertas
+              });
+
+              navigate('/thank-you');
             } catch (downloadError) {
-              console.error('Error al descargar PDF:', downloadError);
+              console.error('Error al descargar PDF o enviar correos:', downloadError);
             }
           }
-
-          // Actualizar el enlace del PDF en Airtable - usando el ID de inspección como identificador
-          try {
-            await updateAirtablePdfLink(id, pdfUrl);
-          } catch (updateError) {
-            console.error('Error actualizando PDF en Airtable:', updateError);
-          }
-
-          // Generar y subir PDF
-          const pdfUrl = `https://lngsgyvpqhjmedjrycqw.supabase.co/storage/v1/object/public/pdfs/rental_${id}_${new Date().toISOString().split('T')[0]}.pdf`;
-
-          // Enviar correos
-          await Promise.all([
-            // Correo de confirmación al huésped (sin PDF)
-            sendFormEmail('completed-form', {
-              to_email: formData.guestEmail,
-              to_name: formData.guestName,
-              from_name: 'Golf Cart Inspection System',
-              from_email: 'no-reply@email.golfcartinspection.app',
-              property: formData.property,
-              cart_type: formData.cartType,
-              cart_number: formData.cartNumber,
-              inspection_date: formData.inspectionDate,
-              guestName: formData.guestName,
-              guestEmail: formData.guestEmail,
-              observations: formData.observations,
-              form_id: id,
-              isAdmin: false // Correo al huésped
-            }),
-
-            // Correo a administradores (con PDF)
-            sendFormEmail('completed-form', {
-              to_email: formData.guestEmail, // Usar el email del huésped real
-              to_name: formData.guestName, // Usar el nombre del huésped real
-              from_name: 'Golf Cart Inspection System',
-              from_email: 'no-reply@email.golfcartinspection.app',
-              property: formData.property,
-              cart_type: formData.cartType,
-              cart_number: formData.cartNumber,
-              inspection_date: formData.inspectionDate,
-              observations: formData.observations,
-              formId: id,
-              pdf_attachment: pdfUrl, // Incluir URL del PDF para administradores
-              isAdmin: true, // Correo a administradores
-              skipAdminAlert: true // Evitar envío duplicado de alertas
-            })
-          ]);
-
-          navigate('/thank-you');
         }
       }
     } catch (error) {
