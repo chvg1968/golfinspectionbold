@@ -19,7 +19,12 @@ export interface EmailData {
   signatureBase64?: string;
   termsAccepted?: boolean;
   diagramBase64?: string;
-  diagramPoints?: any[];
+  diagramPoints?: Array<{
+    x: number;
+    y: number;
+    color: string;
+    size?: number;
+  }>;
   adminEmails?: string[];
   isAdmin?: boolean;
   adminAlert?: boolean; // Indica si este correo es una alerta para administradores
@@ -53,7 +58,12 @@ export interface EmailServiceParams {
   signatureBase64?: string;
   termsAccepted?: boolean;
   diagramBase64?: string;
-  diagramPoints?: any[];
+  diagramPoints?: Array<{
+    x: number;
+    y: number;
+    color: string;
+    size?: number;
+  }>;
   isAdmin?: boolean;
   skipAdminAlert?: boolean; // Indica si se debe omitir el envío automático de alertas a administradores
 }
@@ -64,10 +74,10 @@ export interface EmailContentParams {
   to: string | string[];
   subject: string;
   html: string;
-  attachments?: {
+  attachments?: Array<{
     filename: string;
     content: string;
-  }[];
+  }>;
   // Campos adicionales para la API de Resend
   reply_to?: string;
   cc?: string | string[];

@@ -1,5 +1,5 @@
 import { EmailData, EmailServiceParams, EmailContentParams } from "./types.ts";
-import { getFormCreatedAdminEmails, getFormCompletedAdminEmails, getDefaultSender, URLS } from "./config.ts";
+import { getFormCreatedAdminEmails } from "./config.ts";
 import {
   generarContenidoFormularioCreado,
   generarContenidoAlertaFormularioCreado,
@@ -7,16 +7,15 @@ import {
   generarContenidoConfirmacion
 } from "./email-templates.ts";
 
-
 export class EmailService {
-  private API_ENDPOINT = "https://api.resend.com/emails";
-  private apiKey: string;
+  private readonly API_ENDPOINT = "https://api.resend.com/emails";
+  private readonly apiKey: string;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
   }
 
-  async sendEmail(params: EmailServiceParams) {
+  async sendEmail(params: EmailServiceParams): Promise<unknown> {
     console.log("Datos completos para envío de correo:", {
       guestName: params.to_name,
       guestEmail: params.to_email,
@@ -24,9 +23,7 @@ export class EmailService {
       pdfBase64: params.pdf_attachment ? 'Base64 presente' : 'Base64 ausente'
     });
 
-    // Preparar datos del correo con valores validados
     const emailData: EmailData = {
-      // Asegurarse de que guestName y guestEmail sean strings válidos
       guestName: params.to_name && typeof params.to_name === 'string' ? params.to_name.trim() : '',
       guestEmail: params.to_email && typeof params.to_email === 'string' ? params.to_email.trim() : '',
       property: params.property,
@@ -37,45 +34,30 @@ export class EmailService {
       replyTo: params.reply_to,
       subject: params.subject || this.generateSubject(params),
       pdfBase64: params.pdf_attachment,
-
-      // Campos adicionales de inspección
       cartType: params.cart_type,
       cartNumber: params.cart_number,
       observations: params.observations,
-
-      // Campos de firma y términos
       signatureBase64: params.signatureBase64,
       termsAccepted: params.termsAccepted,
       diagramBase64: params.diagramBase64,
       diagramPoints: [],
-
-      // Lista de administradores (separada de los datos del huésped)
-      // Usamos la lista para formularios creados por defecto
       adminEmails: getFormCreatedAdminEmails()
     };
 
-    // Seleccionar template avanzado según el tipo de evento
-    let emailContent;
+    let emailContent: EmailContentParams;
 
-    // Determinar si es un correo para administradores
     const isAdminEmail = params.isAdmin || emailData.isAdmin;
 
     if (emailData.type === 'guest-form') {
       if (isAdminEmail) {
-        // Si es un correo para administradores, usar la plantilla de alerta
         emailContent = generarContenidoAlertaFormularioCreado(emailData);
-        // Enviar directamente usando el método unificado
         return this.sendAdminEmail(emailContent, 'created');
       } else {
-        // Correo inicial al guest
         emailContent = generarContenidoFormularioCreado(emailData);
 
-        // Enviar alerta a administradores SOLO si no se está enviando una alerta específica
-        // y si no hay un parámetro explícito que indique que no se debe enviar la alerta
         if (!params.skipAdminAlert && !emailData.adminAlert) {
           try {
             const adminAlert = generarContenidoAlertaFormularioCreado(emailData);
-            // Usar el nuevo método unificado
             await this.sendAdminEmail(adminAlert, 'created');
             console.log("Alerta a administradores enviada correctamente");
           } catch (error) {
@@ -93,38 +75,29 @@ export class EmailService {
       });
 
       if (isAdminEmail) {
-        // Correo a administradores con PDF firmado
         console.log("Generando contenido para administradores");
         emailContent = generarContenidoFormularioFirmado(emailData);
         console.log("Destinatarios del correo a administradores:", emailContent.to);
-
-        // Enviar directamente usando el método unificado
         return this.sendAdminEmail(emailContent, 'completed');
       } else {
-        // Confirmación al guest
         console.log("Generando contenido para huésped");
         emailContent = generarContenidoConfirmacion(emailData);
         console.log("Destinatarios del correo al huésped:", emailContent.to);
       }
     } else {
-      // Fallback: alerta a administradores
       emailContent = generarContenidoAlertaFormularioCreado(emailData);
 
-      // Si es un tipo desconocido pero es para administradores, enviar directamente
       if (isAdminEmail) {
         return this.sendAdminEmail(emailContent, 'created');
       }
     }
 
-    // Si llegamos aquí, es porque estamos enviando un correo al huésped
-    // Asegurarnos de que el emailContent tenga los destinatarios correctos
     if (!emailContent.to) {
       emailContent.to = emailData.guestEmail ?
         `${emailData.guestName || 'Guest'} <${emailData.guestEmail}>` :
-        'hernancalendar01@gmail.com'; // Fallback por seguridad
+        'hernancalendar01@gmail.com';
     }
 
-    // Asegurarnos de que el emailContent tenga el contenido HTML
     if (!emailContent.html) {
       emailContent.html = '<p>No HTML content</p>';
     }
@@ -134,13 +107,11 @@ export class EmailService {
       subject: emailContent.subject
     }));
 
-    // Verificar si el emailContent.to es un string con comas y convertirlo a array
     if (typeof emailContent.to === 'string' && emailContent.to.includes(',')) {
       console.log("Convirtiendo string con comas a array de destinatarios");
       emailContent.to = emailContent.to.split(',').map((email: string) => email.trim());
     }
 
-    // Enviar correo
     let responseBody: string | null = null;
     try {
       const response = await fetch(this.API_ENDPOINT, {
@@ -166,7 +137,7 @@ export class EmailService {
       return responseBody ? JSON.parse(responseBody) : null;
     } catch (error) {
       console.error("Error detallado al enviar correo:", {
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Error desconocido',
         to: emailContent.to,
         subject: emailContent.subject,
         responseBody: responseBody || 'Sin respuesta'
@@ -176,7 +147,6 @@ export class EmailService {
   }
 
   private generateSubject(params: EmailServiceParams): string {
-    // Generar un asunto basado en los parámetros disponibles
     if (params.subject) {
       return params.subject;
     }
@@ -189,7 +159,6 @@ export class EmailService {
   }
 
   private generateFormLink(params: EmailServiceParams): string {
-    // Generar un link basado en los parámetros disponibles
     const baseUrl = 'https://golf-cart-inspection.netlify.app';
 
     if (params.formId) {
@@ -205,25 +174,17 @@ export class EmailService {
     return `${baseUrl}/inspection`;
   }
 
-  /**
-   * Método unificado para enviar correos a administradores
-   * Este método reemplaza a sendAdminAlert y simplifica el envío de correos a administradores
-   */
-  async sendAdminEmail(emailContent: EmailContentParams, type: 'created' | 'completed' = 'created') {
+  async sendAdminEmail(emailContent: EmailContentParams, type: 'created' | 'completed' = 'created'): Promise<unknown> {
     try {
-      // Crear una copia del emailContent para evitar modificar el original
       const emailPayload = { ...emailContent };
 
-      // Verificar que hay destinatarios
       if (!emailPayload.to) {
         console.warn("No hay destinatarios administrativos para enviar el correo");
         return;
       }
 
-      // El emailContent ya es compatible con la API de Resend, así que lo usamos directamente
       console.log(`Enviando correo de formulario ${type} a administradores:`, emailPayload.to);
 
-      // Verificar si el to es un string con comas y convertirlo a array
       if (typeof emailPayload.to === 'string' && emailPayload.to.includes(',')) {
         console.log("Convirtiendo string con comas a array de destinatarios");
         emailPayload.to = emailPayload.to.split(',').map((email: string) => email.trim());
@@ -251,7 +212,10 @@ export class EmailService {
 
       return responseBody ? JSON.parse(responseBody) : null;
     } catch (error) {
-      console.error(`Error detallado al enviar correo de formulario ${type} a administradores:`, error);
+      console.error("Error al enviar correo a administradores:", {
+        message: error instanceof Error ? error.message : 'Error desconocido',
+        type
+      });
       throw error;
     }
   }

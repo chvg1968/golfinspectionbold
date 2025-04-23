@@ -1,5 +1,4 @@
-
-import { EmailData, EmailContentParams} from "./types.ts";
+import { EmailData, EmailContentParams } from "./types.ts";
 import {
   getDefaultSender,
   getFormCreatedAdminEmails,
@@ -18,7 +17,6 @@ import {
 export function generarContenidoFormularioCreado(
   data: EmailData
 ): EmailContentParams {
-  // Plantilla personalizada para el primer correo al guest (UNIFICADA)
   const { guestName, guestEmail, property, inspectionDate, formLinkWithDomain, formLink } = data;
 
   return {
@@ -57,7 +55,7 @@ export function generarContenidoFormularioCreado(
         <hr style="border: 1px solid #eee; margin: 20px 0;">
         <p style="color: #666;">Best regards,<br>Luxe Properties</p>
       </div>
-    `,
+    `
   };
 }
 
@@ -67,8 +65,6 @@ export function generarContenidoAlertaFormularioCreado(
 ): EmailContentParams {
   const { guestName, guestEmail, property, inspectionDate, adminEmails } = data;
 
-  // Obtener la lista de administradores para alertas de formulario creado
-  // Usar adminEmails si existe, de lo contrario usar la lista específica
   const recipients = Array.isArray(adminEmails) && adminEmails.length > 0
     ? adminEmails.filter((e): e is string => !!e)
     : getFormCreatedAdminEmails();
@@ -87,7 +83,7 @@ export function generarContenidoAlertaFormularioCreado(
         <p><strong>Guest Email:</strong> ${guestEmail || "N/A"}</p>
         <p><strong>Inspection Date:</strong> ${inspectionDate || "N/A"}</p>
       </div>
-    `,
+    `
   };
 }
 
@@ -101,10 +97,9 @@ export function generarContenidoFormularioFirmado(
     property,
     cartType,
     cartNumber,
-    observations,
+    observations
   } = data;
 
-  // Verificar que tenemos datos válidos del huésped
   if (!guestName || !guestEmail) {
     console.warn("Datos de huésped incompletos en generarContenidoFormularioFirmado:", { guestName, guestEmail });
   }
@@ -136,7 +131,7 @@ export function generarContenidoFormularioFirmado(
         </div>
         <p style="color: #666;">Luxe Properties</p>
       </div>
-    `,
+    `
   };
 }
 
@@ -144,10 +139,9 @@ export function generarContenidoFormularioFirmado(
 export function generarContenidoConfirmacion(
   data: EmailData
 ): EmailContentParams {
-  const { guestName, guestEmail, property, inspectionDate} = data;
-  const isAdmin = !!data.isAdmin; // Convertir a booleano explícito
+  const { guestName, guestEmail, property, inspectionDate } = data;
+  const isAdmin = !!data.isAdmin;
 
-  // Si NO es admin (es guest), enviar correo sin enlace al PDF
   if (!isAdmin) {
     return {
       from: getDefaultSender(),
@@ -167,26 +161,25 @@ export function generarContenidoConfirmacion(
           <hr style="border: 1px solid #eee; margin: 20px 0;">
           <p style="color: #666;">Best regards,<br>Luxe Properties</p>
         </div>
-      `,
-    };
-  } else {
-
-    return {
-      from: getDefaultSender(),
-      to: getFormCompletedAdminEmails(),
-      subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
-          <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
-          <p>The guest <strong>${guestName}</strong> has completed the inspection form for <strong>${property}</strong>.</p>
-          <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
-            <p><strong>Property:</strong> ${property}</p>
-            <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
-          </div>
-          <p style="color: #666;">Luxe Properties</p>
-        </div>
-      `,
+      `
     };
   }
+
+  return {
+    from: getDefaultSender(),
+    to: getFormCompletedAdminEmails(),
+    subject: `Admin Copy: Golf Cart Inspection Completed for ${property}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <img src="https://luxepropertiespr.com/wp-content/uploads/2024/09/LOGO.png" alt="Luxe Properties Logo" style="max-width: 200px; margin-bottom: 20px;">
+        <h2 style="color: #2c5282; margin-bottom: 20px;">Inspection Completed</h2>
+        <p>The guest <strong>${guestName}</strong> has completed the inspection form for <strong>${property}</strong>.</p>
+        <div style="margin: 20px 0; padding: 15px; background-color: #f7fafc; border-radius: 5px;">
+          <p><strong>Property:</strong> ${property}</p>
+          <p><strong>Inspection Date:</strong> ${inspectionDate}</p>
+        </div>
+        <p style="color: #666;">Luxe Properties</p>
+      </div>
+    `
+  };
 }
