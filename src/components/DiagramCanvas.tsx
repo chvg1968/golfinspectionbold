@@ -13,12 +13,14 @@ interface DiagramCanvasProps {
   onPointsChange: (points: Point[]) => void;
 }
 
-type DiagramColor = 'red' | '#00FF7F' | '#BF40BF';
+type DiagramColor = 'red' | '#00FF7F' | '#BF40BF' | '#FFD700' | '#FFD700';
 
-const COLOR_OPTIONS: Array<{ color: DiagramColor; label: string }> = [
+const COLOR_OPTIONS: Array<{ color: DiagramColor; label: string; type?: 'x' | 'check' }> = [
   { color: 'red', label: 'Scratches' },
   { color: '#00FF7F', label: 'Missing Parts' },
-  { color: '#BF40BF', label: 'Damages/Impacts' }
+  { color: '#BF40BF', label: 'Damages/Impacts' },
+  { color: '#FFD700', label: 'Lights', type: 'x' },
+  { color: '#FFD700', label: 'Lights', type: 'check' }
 ] as const;
 
 const CANVAS_WIDTH = 1200;
@@ -37,6 +39,7 @@ export function DiagramCanvas({
 }: DiagramCanvasProps) {
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentColor, setCurrentColor] = useState<DiagramColor>(COLOR_OPTIONS[0].color);
+  const [currentType, setCurrentType] = useState<'x' | 'check' | undefined>(undefined);
   const [currentPath, setCurrentPath] = useState<Point[]>([]);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -59,9 +62,31 @@ export function DiagramCanvas({
     console.log('Redrawing canvas with points:', points);
     points.forEach(point => {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, point.size / 2, 0, Math.PI * 2);
-      ctx.fillStyle = point.color;
-      ctx.fill();
+      if (point.type === 'x') {
+        // Dibujar X
+        const size = point.size;
+        ctx.moveTo(point.x - size, point.y - size);
+        ctx.lineTo(point.x + size, point.y + size);
+        ctx.moveTo(point.x + size, point.y - size);
+        ctx.lineTo(point.x - size, point.y + size);
+        ctx.strokeStyle = point.color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else if (point.type === 'check') {
+        // Dibujar check
+        const size = point.size;
+        ctx.moveTo(point.x - size, point.y);
+        ctx.lineTo(point.x, point.y + size);
+        ctx.lineTo(point.x + size, point.y - size/2);
+        ctx.strokeStyle = point.color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      } else {
+        // Dibujar punto normal
+        ctx.arc(point.x, point.y, point.size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = point.color;
+        ctx.fill();
+      }
       ctx.closePath();
       console.log('Drawing point:', { ...point, color: ctx.fillStyle });
     });
@@ -70,9 +95,31 @@ export function DiagramCanvas({
     if (!isGuestView) {
       currentPath.forEach(point => {
         ctx.beginPath();
-        ctx.arc(point.x, point.y, point.size / 2, 0, Math.PI * 2);
-        ctx.fillStyle = point.color;
-        ctx.fill();
+        if (point.type === 'x') {
+          // Dibujar X
+          const size = point.size;
+          ctx.moveTo(point.x - size, point.y - size);
+          ctx.lineTo(point.x + size, point.y + size);
+          ctx.moveTo(point.x + size, point.y - size);
+          ctx.lineTo(point.x - size, point.y + size);
+          ctx.strokeStyle = point.color;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (point.type === 'check') {
+          // Dibujar check
+          const size = point.size;
+          ctx.moveTo(point.x - size, point.y);
+          ctx.lineTo(point.x, point.y + size);
+          ctx.lineTo(point.x + size, point.y - size/2);
+          ctx.strokeStyle = point.color;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else {
+          // Dibujar punto normal
+          ctx.arc(point.x, point.y, point.size / 2, 0, Math.PI * 2);
+          ctx.fillStyle = point.color;
+          ctx.fill();
+        }
         ctx.closePath();
       });
     }
@@ -179,9 +226,10 @@ export function DiagramCanvas({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
       color: currentColor,
-      size: POINT_SIZE
+      size: POINT_SIZE,
+      type: currentType
     };
-  }, [currentColor]);
+  }, [currentColor, currentType]);
 
   // Handle mouse down event
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -218,7 +266,9 @@ export function DiagramCanvas({
       
       <div className="flex items-center gap-6 mb-4">
         <span className="text-sm font-medium text-gray-700">Color reference:</span>
-        {COLOR_OPTIONS.map(({ color, label }) => (
+        {COLOR_OPTIONS.filter((opt, index, self) => 
+          opt.color !== '#FFD700' || index === self.findIndex(o => o.color === '#FFD700')
+        ).map(({ color, label }) => (
           <div key={color} className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded-full"
@@ -233,17 +283,27 @@ export function DiagramCanvas({
         {!isGuestView && (
           <div className="flex flex-col justify-start bg-white p-3 rounded-lg shadow-sm border border-gray-200 w-20">
             <div className="flex flex-col gap-2 mb-4">
-              {COLOR_OPTIONS.map(({ color, label }) => (
+              {COLOR_OPTIONS.map(({ color, label, type }) => (
                 <button
-                  key={color}
+                  key={`${color}-${type || 'normal'}`}
                   type="button"
-                  className={`w-6 h-6 rounded-full mx-auto transition-all ${
-                    currentColor === color ? 'ring-2 ring-offset-2 ring-gray-500' : ''
+                  className={`w-6 h-6 rounded-full mx-auto transition-all flex items-center justify-center ${
+                    currentColor === color && currentType === type ? 'ring-2 ring-offset-2 ring-gray-500' : ''
                   }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => setCurrentColor(color)}
-                  title={label}
-                />
+                  style={{ backgroundColor: type ? 'transparent' : color }}
+                  onClick={() => {
+                    setCurrentColor(color);
+                    setCurrentType(type);
+                  }}
+                  title={`${label}${type ? ` (${type})` : ''}`}
+                >
+                  {type === 'x' && (
+                    <span className="text-yellow-500 font-bold">×</span>
+                  )}
+                  {type === 'check' && (
+                    <span className="text-yellow-500 font-bold">✓</span>
+                  )}
+                </button>
               ))}
             </div>
 

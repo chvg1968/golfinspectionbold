@@ -13,6 +13,7 @@ export interface Point {
   y: number;
   color: string;
   size: number;
+  type?: 'x' | 'check';
 }
 
 export interface DiagramData {
